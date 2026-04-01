@@ -1,8 +1,7 @@
 import { Renderer } from "@freelensapp/extensions";
 import { observer } from "mobx-react";
-import { useState } from "react";
+import { showOpsWizard } from "../components/ops-wizard/show-wizard";
 import { withErrorPage } from "../components/error-page";
-import { WizardDialog } from "../components/ops-wizard/wizard-dialog";
 import { getPhaseClass, getPhaseText } from "../components/status-conditions";
 import { OpsRequest, type OpsRequestApi } from "../k8s/kubeblocks/opsrequest-v1alpha1";
 import { getOpsTypeIcon } from "../utils";
@@ -33,10 +32,8 @@ const renderTableHeader = [
   { title: "Age", sortBy: "age" as const, className: styles.age },
 ];
 
-export const OperationsPage = observer(() => {
-  const [wizardOpen, setWizardOpen] = useState(false);
-
-  const pageContent = withErrorPage(() => {
+export const OperationsPage = observer(() =>
+  withErrorPage(() => {
     const store = OpsRequest.getStore<OpsRequest>();
 
     return (
@@ -65,20 +62,10 @@ export const OperationsPage = observer(() => {
           ]}
           addRemoveButtons={{
             addTooltip: "Create Operation",
-            onAdd: () => setWizardOpen(true),
+            onAdd: () => showOpsWizard(),
           }}
         />
       </>
     );
-  });
-
-  return (
-    <>
-      {pageContent}
-      <WizardDialog
-        isOpen={wizardOpen}
-        onClose={() => setWizardOpen(false)}
-      />
-    </>
-  );
-});
+  }),
+);

@@ -1,6 +1,5 @@
 import { Renderer } from "@freelensapp/extensions";
-import { useState } from "react";
-import { WizardDialog } from "../components/ops-wizard/wizard-dialog";
+import { showOpsWizard } from "../components/ops-wizard/show-wizard";
 import type { Cluster } from "../k8s/kubeblocks/cluster-v1";
 import type { OpsRequestType } from "../k8s/kubeblocks/types";
 
@@ -36,24 +35,20 @@ function createOpsRequest(clusterName: string, namespace: string, type: string) 
   });
 }
 
+// Simple ops — create OpsRequest directly with confirmation dialog
+
 export function RestartClusterMenuItem(props: ClusterOpsMenuItemProps) {
   const { object, toolbar } = props;
   if (!object) return <></>;
 
-  const doRestart = () => {
-    ConfirmDialog.open({
-      ok: async () => {
-        await createOpsRequest(object.getName(), object.getNs() ?? "", "Restart");
-      },
-      labelOk: "Restart",
-      message: (
-        <p>Restart cluster <b>{object.getName()}</b>?</p>
-      ),
-    });
-  };
-
   return (
-    <MenuItem onClick={doRestart}>
+    <MenuItem onClick={() => {
+      ConfirmDialog.open({
+        ok: async () => { await createOpsRequest(object.getName(), object.getNs() ?? "", "Restart"); },
+        labelOk: "Restart",
+        message: <p>Restart cluster <b>{object.getName()}</b>?</p>,
+      });
+    }}>
       <Icon material="restart_alt" interactive={toolbar} title="Restart" />
       <span className="title">Restart</span>
     </MenuItem>
@@ -64,20 +59,14 @@ export function StopClusterMenuItem(props: ClusterOpsMenuItemProps) {
   const { object, toolbar } = props;
   if (!object) return <></>;
 
-  const doStop = () => {
-    ConfirmDialog.open({
-      ok: async () => {
-        await createOpsRequest(object.getName(), object.getNs() ?? "", "Stop");
-      },
-      labelOk: "Stop",
-      message: (
-        <p>Stop cluster <b>{object.getName()}</b>?</p>
-      ),
-    });
-  };
-
   return (
-    <MenuItem onClick={doStop}>
+    <MenuItem onClick={() => {
+      ConfirmDialog.open({
+        ok: async () => { await createOpsRequest(object.getName(), object.getNs() ?? "", "Stop"); },
+        labelOk: "Stop",
+        message: <p>Stop cluster <b>{object.getName()}</b>?</p>,
+      });
+    }}>
       <Icon material="stop" interactive={toolbar} title="Stop" />
       <span className="title">Stop</span>
     </MenuItem>
@@ -88,90 +77,47 @@ export function StartClusterMenuItem(props: ClusterOpsMenuItemProps) {
   const { object, toolbar } = props;
   if (!object) return <></>;
 
-  const doStart = () => {
-    ConfirmDialog.open({
-      ok: async () => {
-        await createOpsRequest(object.getName(), object.getNs() ?? "", "Start");
-      },
-      labelOk: "Start",
-      message: (
-        <p>Start cluster <b>{object.getName()}</b>?</p>
-      ),
-    });
-  };
-
   return (
-    <MenuItem onClick={doStart}>
+    <MenuItem onClick={() => {
+      ConfirmDialog.open({
+        ok: async () => { await createOpsRequest(object.getName(), object.getNs() ?? "", "Start"); },
+        labelOk: "Start",
+        message: <p>Start cluster <b>{object.getName()}</b>?</p>,
+      });
+    }}>
       <Icon material="play_arrow" interactive={toolbar} title="Start" />
       <span className="title">Start</span>
     </MenuItem>
   );
 }
 
-// Wizard-launching menu items: each renders its own WizardDialog inline
-// so it works regardless of which page the user is on
+// Wizard ops — open wizard dialog imperatively (mounted on document.body, survives menu close)
 
-function WizardMenuItem({
-  object,
-  toolbar,
-  icon,
-  label,
-  opsType,
-}: {
-  object: Cluster | undefined;
-  toolbar: boolean | undefined;
-  icon: string;
-  label: string;
-  opsType?: OpsRequestType;
-}) {
-  const [wizardOpen, setWizardOpen] = useState(false);
-  if (!object) return <></>;
+function makeWizardMenuItem(icon: string, label: string, opsType?: OpsRequestType) {
+  return function WizardMenuItem(props: ClusterOpsMenuItemProps) {
+    const { object, toolbar } = props;
+    if (!object) return <></>;
 
-  return (
-    <>
-      <MenuItem onClick={() => setWizardOpen(true)}>
+    return (
+      <MenuItem onClick={() => {
+        showOpsWizard({
+          preselectedCluster: object.getName(),
+          preselectedNamespace: object.getNs() ?? "",
+          preselectedType: opsType,
+        });
+      }}>
         <Icon material={icon} interactive={toolbar} title={label} />
         <span className="title">{label}</span>
       </MenuItem>
-      <WizardDialog
-        isOpen={wizardOpen}
-        onClose={() => setWizardOpen(false)}
-        preselectedCluster={object.getName()}
-        preselectedNamespace={object.getNs() ?? ""}
-        preselectedType={opsType}
-      />
-    </>
-  );
+    );
+  };
 }
 
-export function VerticalScaleMenuItem(props: ClusterOpsMenuItemProps) {
-  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="straighten" label="Vertical Scale" opsType="VerticalScaling" />;
-}
-
-export function HorizontalScaleMenuItem(props: ClusterOpsMenuItemProps) {
-  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="width_normal" label="Horizontal Scale" opsType="HorizontalScaling" />;
-}
-
-export function VolumeExpandMenuItem(props: ClusterOpsMenuItemProps) {
-  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="storage" label="Volume Expand" opsType="VolumeExpansion" />;
-}
-
-export function UpgradeMenuItem(props: ClusterOpsMenuItemProps) {
-  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="upgrade" label="Upgrade" opsType="Upgrade" />;
-}
-
-export function BackupMenuItem(props: ClusterOpsMenuItemProps) {
-  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="backup" label="Backup" opsType="Backup" />;
-}
-
-export function ExposeMenuItem(props: ClusterOpsMenuItemProps) {
-  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="public" label="Expose" opsType="Expose" />;
-}
-
-export function SwitchoverMenuItem(props: ClusterOpsMenuItemProps) {
-  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="swap_horiz" label="Switchover" opsType="Switchover" />;
-}
-
-export function CustomOperationMenuItem(props: ClusterOpsMenuItemProps) {
-  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="build" label="Custom Operation" />;
-}
+export const VerticalScaleMenuItem = makeWizardMenuItem("straighten", "Vertical Scale", "VerticalScaling");
+export const HorizontalScaleMenuItem = makeWizardMenuItem("width_normal", "Horizontal Scale", "HorizontalScaling");
+export const VolumeExpandMenuItem = makeWizardMenuItem("storage", "Volume Expand", "VolumeExpansion");
+export const UpgradeMenuItem = makeWizardMenuItem("upgrade", "Upgrade", "Upgrade");
+export const BackupMenuItem = makeWizardMenuItem("backup", "Backup", "Backup");
+export const ExposeMenuItem = makeWizardMenuItem("public", "Expose", "Expose");
+export const SwitchoverMenuItem = makeWizardMenuItem("swap_horiz", "Switchover", "Switchover");
+export const CustomOperationMenuItem = makeWizardMenuItem("build", "Custom Operation");
