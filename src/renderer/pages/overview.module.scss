@@ -1,0 +1,68 @@
+@use "../vars";
+
+.overviewStatuses {
+  background: var(--contentColor);
+}
+
+.statuses {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 120px);
+  justify-content: space-evenly;
+  grid-gap: 8px;
+  padding: 16px;
+}
+
+.chartColumn {
+  align-self: end;
+}
+
+.content {
+  --flex-gap: #{vars.$padding * 2};
+  min-height: 100%;
+  height: 100%;
+  overflow-y: auto;
+
+  header {
+    background: var(--contentColor);
+    position: relative;
+    padding: vars.$padding * 2;
+    text-align: center;
+    padding-bottom: 3em;
+
+    h5 {
+      color: var(--textColorPrimary);
+    }
+  }
+}
+
+.section {
+  background: var(--contentColor);
+  padding: vars.$padding * 2;
+  margin-top: vars.$margin;
+
+  h6 {
+    color: var(--textColorPrimary);
+    margin-bottom: vars.$margin;
+  }
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$gap;
+}
+
+.tableRow {
+  display: flex;
+  align-items: center;
+  gap: vars.$gap * 2;
+  padding: vars.$padding;
+  border-bottom: 1px solid var(--borderFaintColor);
+
+  span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
