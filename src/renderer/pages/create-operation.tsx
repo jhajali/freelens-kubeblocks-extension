@@ -78,9 +78,12 @@ function buildManifest(
     case "Upgrade":
       manifest.spec.upgrade = { serviceVersion };
       break;
-    case "Backup":
-      manifest.spec.backup = { backupMethod };
+    case "Backup": {
+      const bkTs = Math.floor(Date.now() / 1000).toString(36);
+      const bkCluster = clusterName.length > 20 ? clusterName.slice(0, 20) : clusterName;
+      manifest.spec.backup = { backupMethod, backupName: `bk-${bkCluster}-${bkTs}` };
       break;
+    }
     case "Restore":
       manifest.spec.restore = { backupName };
       break;
@@ -108,9 +111,9 @@ function getVersionsForCompDef(compDef: string): string[] {
     for (const cv of store.contextItems) {
       const rules = cv.spec?.compatibilityRules ?? [];
       const matchesCompDef = rules.some((rule) =>
-        rule.compDefs?.some((cd) => compDef.startsWith(cd) || cd.startsWith(compDef.split("-")[0])),
+        rule.compDefs?.some((cd) => compDef.startsWith(cd)),
       );
-      if (matchesCompDef || rules.length === 0) {
+      if (matchesCompDef) {
         for (const v of ComponentVersion.getServiceVersions(cv)) {
           versions.add(v);
         }
