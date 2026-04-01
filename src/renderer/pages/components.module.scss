@@ -1,0 +1,23 @@
+.page {
+  :global(.TableCell) {
+    &.cluster {
+      flex-grow: 0.8;
+    }
+
+    &.definition {
+      flex-grow: 0.8;
+    }
+
+    &.replicas {
+      flex-grow: 0.3;
+    }
+
+    &.phase {
+      flex-grow: 0.5;
+    }
+
+    &.age {
+      flex-grow: 0.3;
+    }
+  }
+}

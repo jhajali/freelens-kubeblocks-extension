@@ -1,0 +1,23 @@
+.page {
+  :global(.TableCell) {
+    &.cluster {
+      flex-grow: 0.8;
+    }
+
+    &.type {
+      flex-grow: 0.6;
+    }
+
+    &.phase {
+      flex-grow: 0.5;
+    }
+
+    &.progress {
+      flex-grow: 0.5;
+    }
+
+    &.age {
+      flex-grow: 0.3;
+    }
+  }
+}
