@@ -16,11 +16,11 @@ export interface ClusterOpsMenuItemProps extends Renderer.Component.KubeObjectMe
 }
 
 function createOpsRequest(clusterName: string, namespace: string, type: string) {
-  const apiBase = "/apis/apps.kubeblocks.io/v1alpha1/namespaces/" + namespace + "/opsrequests";
+  const apiBase = "/apis/operations.kubeblocks.io/v1alpha1/namespaces/" + namespace + "/opsrequests";
   const name = `${clusterName}-${type.toLowerCase()}-${Date.now()}`;
 
   const body: any = {
-    apiVersion: "apps.kubeblocks.io/v1alpha1",
+    apiVersion: "operations.kubeblocks.io/v1alpha1",
     kind: "OpsRequest",
     metadata: { name, namespace },
     spec: { clusterName, type },

@@ -38,10 +38,10 @@ export class OpsRequest extends Renderer.K8sApi.LensExtensionKubeObject<
 > {
   static readonly kind = "OpsRequest";
   static readonly namespaced = true;
-  static readonly apiBase = "/apis/apps.kubeblocks.io/v1alpha1/opsrequests";
+  static readonly apiBase = "/apis/operations.kubeblocks.io/v1alpha1/opsrequests";
 
   static readonly crd: KubeBlocksKubeObjectCRD = {
-    apiVersions: ["apps.kubeblocks.io/v1alpha1"],
+    apiVersions: ["operations.kubeblocks.io/v1alpha1"],
     plural: "opsrequests",
     singular: "opsrequest",
     shortNames: ["ops"],

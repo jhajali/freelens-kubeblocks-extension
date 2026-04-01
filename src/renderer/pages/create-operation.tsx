@@ -45,7 +45,7 @@ function buildManifest(
 ): string {
   const name = `${clusterName}-${opsType.toLowerCase()}-${Math.floor(Date.now() / 1000)}`;
   const manifest: any = {
-    apiVersion: "apps.kubeblocks.io/v1alpha1",
+    apiVersion: "operations.kubeblocks.io/v1alpha1",
     kind: "OpsRequest",
     metadata: { name, namespace },
     spec: { clusterName, type: opsType },
@@ -129,7 +129,7 @@ export const CreateOperationPage = observer(() => {
     try {
       const manifest = yaml.load(reviewYaml) as any;
       const ns = manifest.metadata?.namespace ?? namespace;
-      const apiBase = `/apis/apps.kubeblocks.io/v1alpha1/namespaces/${ns}/opsrequests`;
+      const apiBase = `/apis/operations.kubeblocks.io/v1alpha1/namespaces/${ns}/opsrequests`;
       const res = await fetch(`/api-kube${apiBase}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
