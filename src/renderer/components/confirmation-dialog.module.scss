@@ -1,0 +1,16 @@
+@use "../vars";
+
+.dialog {
+  padding: vars.$padding * 2;
+}
+
+.message {
+  margin-bottom: vars.$margin * 2;
+  color: var(--textColorPrimary);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: vars.$gap;
+}
