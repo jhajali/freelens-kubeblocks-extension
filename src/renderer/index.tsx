@@ -20,6 +20,9 @@ import {
   StartClusterMenuItem,
   StopClusterMenuItem,
 } from "./menus/cluster-ops-menu-items";
+import { BackupLocationsPage } from "./pages/backup-locations";
+import { BackupPoliciesPage } from "./pages/backup-policies";
+import { BackupSchedulesPage } from "./pages/backup-schedules";
 import { BackupsPage } from "./pages/backups";
 import { ClustersPage } from "./pages/clusters";
 import { ComponentsPage } from "./pages/components";
@@ -87,6 +90,24 @@ export default class KubeBlocksExtension extends Renderer.LensExtension {
         Page: () => <DefinitionsPage />,
       },
     },
+    {
+      id: "kubeblocks-backup-locations",
+      components: {
+        Page: () => <BackupLocationsPage />,
+      },
+    },
+    {
+      id: "kubeblocks-backup-policies",
+      components: {
+        Page: () => <BackupPoliciesPage />,
+      },
+    },
+    {
+      id: "kubeblocks-backup-schedules",
+      components: {
+        Page: () => <BackupSchedulesPage />,
+      },
+    },
   ];
 
   clusterPageMenus = [
@@ -152,6 +173,27 @@ export default class KubeBlocksExtension extends Renderer.LensExtension {
       parentId: "kubeblocks",
       target: { pageId: "kubeblocks-definitions" },
       title: "Definitions",
+      components: {},
+    },
+    {
+      id: "kubeblocks-backup-locations",
+      parentId: "kubeblocks",
+      target: { pageId: "kubeblocks-backup-locations" },
+      title: "Backup Locations",
+      components: {},
+    },
+    {
+      id: "kubeblocks-backup-policies",
+      parentId: "kubeblocks",
+      target: { pageId: "kubeblocks-backup-policies" },
+      title: "Backup Policies",
+      components: {},
+    },
+    {
+      id: "kubeblocks-backup-schedules",
+      parentId: "kubeblocks",
+      target: { pageId: "kubeblocks-backup-schedules" },
+      title: "Backup Schedules",
       components: {},
     },
   ];
