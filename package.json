@@ -1,6 +1,6 @@
 {
   "name": "@freelensapp/kubeblocks-extension",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Freelens extension for KubeBlocks",
   "repository": {
     "type": "git",
