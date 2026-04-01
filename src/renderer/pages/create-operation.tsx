@@ -110,12 +110,12 @@ function getVersionsForCompDef(compDef: string): string[] {
     const versions = new Set<string>();
     for (const cv of store.contextItems) {
       const rules = cv.spec?.compatibilityRules ?? [];
-      const matchesCompDef = rules.some((rule) =>
-        rule.compDefs?.some((cd) => compDef.startsWith(cd)),
-      );
-      if (matchesCompDef) {
-        for (const v of ComponentVersion.getServiceVersions(cv)) {
-          versions.add(v);
+      for (const rule of rules) {
+        const matches = rule.compDefs?.some((cd) => compDef.startsWith(cd));
+        if (matches && rule.releases) {
+          for (const v of rule.releases) {
+            if (v) versions.add(v);
+          }
         }
       }
     }
