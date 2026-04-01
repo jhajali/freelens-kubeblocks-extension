@@ -86,17 +86,3 @@ export function StartClusterMenuItem(props: ClusterOpsMenuItemProps) {
     </MenuItem>
   );
 }
-
-export function OperationsWizardMenuItem(props: ClusterOpsMenuItemProps) {
-  const { object, toolbar } = props;
-  if (!object) return <></>;
-
-  return (
-    <MenuItem onClick={() => {
-      Renderer.Navigation.navigate(`/extension/kubeblocks-create-operation`);
-    }}>
-      <Icon material="build" interactive={toolbar} title="Operations..." />
-      <span className="title">Operations...</span>
-    </MenuItem>
-  );
-}

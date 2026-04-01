@@ -1,5 +1,4 @@
 import { Renderer } from "@freelensapp/extensions";
-import { AddonDetails } from "./components/details/addon-details";
 import { BackupDetails } from "./components/details/backup-details";
 import { ClusterDetails } from "./components/details/cluster-details";
 import { ClusterDefinitionDetails } from "./components/details/cluster-definition-details";
@@ -8,7 +7,6 @@ import { ComponentDefinitionDetails } from "./components/details/component-defin
 import { OpsRequestDetails } from "./components/details/opsrequest-details";
 import { RestoreDetails } from "./components/details/restore-details";
 import svgIcon from "./icons/kubeblocks.svg?raw";
-import { Addon } from "./k8s/kubeblocks/addon-v1alpha1";
 import { Backup } from "./k8s/kubeblocks/backup-v1alpha1";
 import { ClusterDefinition } from "./k8s/kubeblocks/cluster-definition-v1";
 import { Cluster } from "./k8s/kubeblocks/cluster-v1";
@@ -17,25 +15,18 @@ import { Component } from "./k8s/kubeblocks/component-v1";
 import { OpsRequest } from "./k8s/kubeblocks/opsrequest-v1alpha1";
 import { Restore } from "./k8s/kubeblocks/restore-v1alpha1";
 import {
-  type AddonMenuItemProps,
-  DisableAddonMenuItem,
-  EnableAddonMenuItem,
-} from "./menus/addon-menu-items";
-import {
   type ClusterOpsMenuItemProps,
-  OperationsWizardMenuItem,
   RestartClusterMenuItem,
   StartClusterMenuItem,
   StopClusterMenuItem,
 } from "./menus/cluster-ops-menu-items";
-import { AddonsPage } from "./pages/addons";
 import { BackupsPage } from "./pages/backups";
 import { ClustersPage } from "./pages/clusters";
 import { ComponentsPage } from "./pages/components";
+import { CreateOperationPage } from "./pages/create-operation";
 import { DefinitionsPage } from "./pages/definitions";
 import { OperationsPage } from "./pages/operations";
 import { KubeBlocksOverviewPage } from "./pages/overview";
-import { CreateOperationPage } from "./pages/create-operation";
 import { RestoresPage } from "./pages/restores";
 
 const {
@@ -73,6 +64,12 @@ export default class KubeBlocksExtension extends Renderer.LensExtension {
       },
     },
     {
+      id: "kubeblocks-create-operation",
+      components: {
+        Page: () => <CreateOperationPage />,
+      },
+    },
+    {
       id: "kubeblocks-backups",
       components: {
         Page: () => <BackupsPage />,
@@ -88,18 +85,6 @@ export default class KubeBlocksExtension extends Renderer.LensExtension {
       id: "kubeblocks-definitions",
       components: {
         Page: () => <DefinitionsPage />,
-      },
-    },
-    {
-      id: "kubeblocks-addons",
-      components: {
-        Page: () => <AddonsPage />,
-      },
-    },
-    {
-      id: "kubeblocks-create-operation",
-      components: {
-        Page: () => <CreateOperationPage />,
       },
     },
   ];
@@ -142,6 +127,13 @@ export default class KubeBlocksExtension extends Renderer.LensExtension {
       components: {},
     },
     {
+      id: "kubeblocks-create-operation",
+      parentId: "kubeblocks",
+      target: { pageId: "kubeblocks-create-operation" },
+      title: "Create Operation",
+      components: {},
+    },
+    {
       id: "kubeblocks-backups",
       parentId: "kubeblocks",
       target: { pageId: "kubeblocks-backups" },
@@ -160,13 +152,6 @@ export default class KubeBlocksExtension extends Renderer.LensExtension {
       parentId: "kubeblocks",
       target: { pageId: "kubeblocks-definitions" },
       title: "Definitions",
-      components: {},
-    },
-    {
-      id: "kubeblocks-addons",
-      parentId: "kubeblocks",
-      target: { pageId: "kubeblocks-addons" },
-      title: Addon.crd.title,
       components: {},
     },
   ];
@@ -232,14 +217,6 @@ export default class KubeBlocksExtension extends Renderer.LensExtension {
         ),
       },
     },
-    {
-      kind: Addon.kind,
-      apiVersions: Addon.crd.apiVersions,
-      priority: 10,
-      components: {
-        Details: (props: Renderer.Component.KubeObjectDetailsProps<Addon>) => <AddonDetails {...props} />,
-      },
-    },
   ];
 
   kubeObjectMenuItems = [
@@ -262,27 +239,6 @@ export default class KubeBlocksExtension extends Renderer.LensExtension {
       apiVersions: Cluster.crd.apiVersions,
       components: {
         MenuItem: (props: ClusterOpsMenuItemProps) => <StartClusterMenuItem {...props} resource={Cluster} />,
-      },
-    },
-    {
-      kind: Cluster.kind,
-      apiVersions: Cluster.crd.apiVersions,
-      components: {
-        MenuItem: (props: ClusterOpsMenuItemProps) => <OperationsWizardMenuItem {...props} resource={Cluster} />,
-      },
-    },
-    {
-      kind: Addon.kind,
-      apiVersions: Addon.crd.apiVersions,
-      components: {
-        MenuItem: (props: AddonMenuItemProps) => <EnableAddonMenuItem {...props} resource={Addon} />,
-      },
-    },
-    {
-      kind: Addon.kind,
-      apiVersions: Addon.crd.apiVersions,
-      components: {
-        MenuItem: (props: AddonMenuItemProps) => <DisableAddonMenuItem {...props} resource={Addon} />,
       },
     },
   ];
