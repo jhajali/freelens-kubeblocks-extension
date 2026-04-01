@@ -1,6 +1,6 @@
 {
   "name": "@freelensapp/kubeblocks-extension",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Freelens extension for KubeBlocks",
   "repository": {
     "type": "git",
@@ -33,7 +33,6 @@
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.16.4",
     "@types/react": "^17.0.91",
-    "@types/react-dom": "^17.0.26",
     "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^5.1.4",
     "electron-vite": "^5.0.0",

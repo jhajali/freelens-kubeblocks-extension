@@ -1,7 +1,5 @@
 import { Renderer } from "@freelensapp/extensions";
-import { showOpsWizard } from "../components/ops-wizard/show-wizard";
 import type { Cluster } from "../k8s/kubeblocks/cluster-v1";
-import type { OpsRequestType } from "../k8s/kubeblocks/types";
 
 const {
   Component: { MenuItem, Icon, ConfirmDialog },
@@ -34,8 +32,6 @@ function createOpsRequest(clusterName: string, namespace: string, type: string) 
     body: JSON.stringify(body),
   });
 }
-
-// Simple ops — create OpsRequest directly with confirmation dialog
 
 export function RestartClusterMenuItem(props: ClusterOpsMenuItemProps) {
   const { object, toolbar } = props;
@@ -91,33 +87,16 @@ export function StartClusterMenuItem(props: ClusterOpsMenuItemProps) {
   );
 }
 
-// Wizard ops — open wizard dialog imperatively (mounted on document.body, survives menu close)
+export function OperationsWizardMenuItem(props: ClusterOpsMenuItemProps) {
+  const { object, toolbar } = props;
+  if (!object) return <></>;
 
-function makeWizardMenuItem(icon: string, label: string, opsType?: OpsRequestType) {
-  return function WizardMenuItem(props: ClusterOpsMenuItemProps) {
-    const { object, toolbar } = props;
-    if (!object) return <></>;
-
-    return (
-      <MenuItem onClick={() => {
-        showOpsWizard({
-          preselectedCluster: object.getName(),
-          preselectedNamespace: object.getNs() ?? "",
-          preselectedType: opsType,
-        });
-      }}>
-        <Icon material={icon} interactive={toolbar} title={label} />
-        <span className="title">{label}</span>
-      </MenuItem>
-    );
-  };
+  return (
+    <MenuItem onClick={() => {
+      Renderer.Navigation.navigate(`/extension/kubeblocks-create-operation`);
+    }}>
+      <Icon material="build" interactive={toolbar} title="Operations..." />
+      <span className="title">Operations...</span>
+    </MenuItem>
+  );
 }
-
-export const VerticalScaleMenuItem = makeWizardMenuItem("straighten", "Vertical Scale", "VerticalScaling");
-export const HorizontalScaleMenuItem = makeWizardMenuItem("width_normal", "Horizontal Scale", "HorizontalScaling");
-export const VolumeExpandMenuItem = makeWizardMenuItem("storage", "Volume Expand", "VolumeExpansion");
-export const UpgradeMenuItem = makeWizardMenuItem("upgrade", "Upgrade", "Upgrade");
-export const BackupMenuItem = makeWizardMenuItem("backup", "Backup", "Backup");
-export const ExposeMenuItem = makeWizardMenuItem("public", "Expose", "Expose");
-export const SwitchoverMenuItem = makeWizardMenuItem("swap_horiz", "Switchover", "Switchover");
-export const CustomOperationMenuItem = makeWizardMenuItem("build", "Custom Operation");

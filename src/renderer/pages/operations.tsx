@@ -1,7 +1,5 @@
-import { Renderer } from "@freelensapp/extensions";
+import { Common, Renderer } from "@freelensapp/extensions";
 import { observer } from "mobx-react";
-import { showOpsWizard } from "../components/ops-wizard/show-wizard";
-import { withErrorPage } from "../components/error-page";
 import { getPhaseClass, getPhaseText } from "../components/status-conditions";
 import { OpsRequest, type OpsRequestApi } from "../k8s/kubeblocks/opsrequest-v1alpha1";
 import { getOpsTypeIcon } from "../utils";
@@ -9,7 +7,7 @@ import styles from "./operations.module.scss";
 import stylesInline from "./operations.module.scss?inline";
 
 const {
-  Component: { Badge, Icon, KubeObjectListLayout, KubeObjectAge, NamespaceSelectBadge, WithTooltip },
+  Component: { Badge, Button, Icon, KubeObjectListLayout, KubeObjectAge, NamespaceSelectBadge, TabLayout, WithTooltip },
 } = Renderer;
 
 const sortingCallbacks = {
@@ -32,40 +30,59 @@ const renderTableHeader = [
   { title: "Age", sortBy: "age" as const, className: styles.age },
 ];
 
-export const OperationsPage = observer(() =>
-  withErrorPage(() => {
-    const store = OpsRequest.getStore<OpsRequest>();
+export const OperationsPage = observer(() => {
+  let store: any = null;
+  try {
+    store = OpsRequest.getStore<OpsRequest>();
+  } catch (e) {
+    Common.logger.debug(`[@freelensapp/kubeblocks-extension]: OpsRequest store not available - ${e}`);
+  }
 
+  if (!store) {
     return (
-      <>
-        <style>{stylesInline}</style>
-        <KubeObjectListLayout<OpsRequest, OpsRequestApi>
-          tableId={`${OpsRequest.crd.plural}Table`}
-          className={styles.page}
-          store={store}
-          sortingCallbacks={sortingCallbacks}
-          searchFilters={[(object: OpsRequest) => object.getSearchFields()]}
-          renderHeaderTitle={OpsRequest.crd.title}
-          renderTableHeader={renderTableHeader}
-          renderTableContents={(object: OpsRequest) => [
-            <WithTooltip>{object.getName()}</WithTooltip>,
-            <NamespaceSelectBadge key="namespace" namespace={object.getNs() ?? ""} />,
-            <WithTooltip>{OpsRequest.getClusterName(object)}</WithTooltip>,
-            <>
-              <Icon small material={getOpsTypeIcon(OpsRequest.getType(object))} />
-              {" "}
-              {OpsRequest.getType(object)}
-            </>,
-            <Badge label={getPhaseText(OpsRequest.getPhase(object))} className={getPhaseClass(OpsRequest.getPhase(object))} />,
-            <WithTooltip>{OpsRequest.getProgress(object)}</WithTooltip>,
-            <KubeObjectAge object={object} key="age" />,
-          ]}
-          addRemoveButtons={{
-            addTooltip: "Create Operation",
-            onAdd: () => showOpsWizard(),
-          }}
-        />
-      </>
+      <TabLayout>
+        <div style={{ padding: "32px", textAlign: "center" }}>
+          <h5 style={{ color: "var(--textColorPrimary)" }}>Operations</h5>
+          <p style={{ color: "var(--textColorSecondary)", margin: "16px 0" }}>
+            No OpsRequest resources found. Create an operation to get started.
+          </p>
+          <Button primary onClick={() => Renderer.Navigation.navigate("/extension/kubeblocks-create-operation")}>
+            <Icon material="add" /> Create Operation
+          </Button>
+        </div>
+      </TabLayout>
     );
-  }),
-);
+  }
+
+  return (
+    <>
+      <style>{stylesInline}</style>
+      <KubeObjectListLayout<OpsRequest, OpsRequestApi>
+        tableId={`${OpsRequest.crd.plural}Table`}
+        className={styles.page}
+        store={store}
+        sortingCallbacks={sortingCallbacks}
+        searchFilters={[(object: OpsRequest) => object.getSearchFields()]}
+        renderHeaderTitle={OpsRequest.crd.title}
+        renderTableHeader={renderTableHeader}
+        renderTableContents={(object: OpsRequest) => [
+          <WithTooltip>{object.getName()}</WithTooltip>,
+          <NamespaceSelectBadge key="namespace" namespace={object.getNs() ?? ""} />,
+          <WithTooltip>{OpsRequest.getClusterName(object)}</WithTooltip>,
+          <>
+            <Icon small material={getOpsTypeIcon(OpsRequest.getType(object))} />
+            {" "}
+            {OpsRequest.getType(object)}
+          </>,
+          <Badge label={getPhaseText(OpsRequest.getPhase(object))} className={getPhaseClass(OpsRequest.getPhase(object))} />,
+          <WithTooltip>{OpsRequest.getProgress(object)}</WithTooltip>,
+          <KubeObjectAge object={object} key="age" />,
+        ]}
+        addRemoveButtons={{
+          addTooltip: "Create Operation",
+          onAdd: () => Renderer.Navigation.navigate("/extension/kubeblocks-create-operation"),
+        }}
+      />
+    </>
+  );
+});
