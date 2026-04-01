@@ -3,7 +3,10 @@ import yaml from "js-yaml";
 import { observer } from "mobx-react";
 import { useState } from "react";
 import { getPhaseClass } from "../components/status-conditions";
+import { Backup } from "../k8s/kubeblocks/backup-v1alpha1";
 import { Cluster } from "../k8s/kubeblocks/cluster-v1";
+import { ComponentVersion } from "../k8s/kubeblocks/component-version-v1";
+import { Component } from "../k8s/kubeblocks/component-v1";
 import type { OpsRequestType } from "../k8s/kubeblocks/types";
 import { defaultYamlDumpOptions, getHeight } from "../utils";
 import styles from "./create-operation.module.scss";
@@ -87,6 +90,42 @@ function buildManifest(
   return yaml.dump(manifest, defaultYamlDumpOptions);
 }
 
+function getClusterComponents(clusterName: string): Component[] {
+  try {
+    const store = Component.getStore<Component>();
+    if (!store) return [];
+    return store.contextItems.filter((c) => Component.getClusterName(c) === clusterName);
+  } catch (_) {
+    return [];
+  }
+}
+
+function getAvailableVersions(): string[] {
+  try {
+    const store = ComponentVersion.getStore<ComponentVersion>();
+    if (!store) return [];
+    const versions = new Set<string>();
+    for (const cv of store.contextItems) {
+      for (const v of ComponentVersion.getServiceVersions(cv)) {
+        versions.add(v);
+      }
+    }
+    return [...versions].sort();
+  } catch (_) {
+    return [];
+  }
+}
+
+function getAvailableBackups(clusterName: string): Backup[] {
+  try {
+    const store = Backup.getStore<Backup>();
+    if (!store) return [];
+    return store.contextItems.filter((b) => Backup.getClusterName(b) === clusterName);
+  } catch (_) {
+    return [];
+  }
+}
+
 export const CreateOperationPage = observer(() => {
   const [step, setStep] = useState<"cluster" | "type" | "config" | "review">("cluster");
   const [clusterName, setClusterName] = useState("");
@@ -111,6 +150,10 @@ export const CreateOperationPage = observer(() => {
     const store = Cluster.getStore<Cluster>();
     if (store) clusters = store.contextItems;
   } catch (_) {}
+
+  const clusterComponents = clusterName ? getClusterComponents(clusterName) : [];
+  const availableVersions = getAvailableVersions();
+  const clusterBackups = clusterName ? getAvailableBackups(clusterName) : [];
 
   const goToReview = () => {
     if (opsType) {
@@ -155,37 +198,77 @@ export const CreateOperationPage = observer(() => {
     </div>
   );
 
+  const renderSelect = (label: string, value: string, onChange: (v: string) => void, options: { value: string; label: string }[], placeholder: string) => (
+    <div className={styles.field}>
+      <label>{label}</label>
+      <select value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">{placeholder}</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+
+  const componentSelect = renderSelect(
+    "Component",
+    componentName,
+    setComponentName,
+    clusterComponents.map((c) => ({
+      value: c.getName(),
+      label: `${c.getName()} (${Component.getDefinition(c)}, ${Component.getReplicas(c)} replicas)`,
+    })),
+    "-- Select Component --",
+  );
+
   const renderConfigFields = () => {
-    const comp = renderField("Component Name", componentName, setComponentName, "e.g. mysql");
     switch (opsType) {
       case "HorizontalScaling":
-        return <>{comp}{renderField("Replicas", replicas, setReplicas, "e.g. 3")}</>;
+        return <>{componentSelect}{renderField("Replicas", replicas, setReplicas, "e.g. 3")}</>;
       case "VerticalScaling":
-        return <>{comp}{renderField("CPU", cpu, setCpu, "e.g. 500m")}{renderField("Memory", memory, setMemory, "e.g. 1Gi")}</>;
+        return <>{componentSelect}{renderField("CPU", cpu, setCpu, "e.g. 500m")}{renderField("Memory", memory, setMemory, "e.g. 1Gi")}</>;
       case "VolumeExpansion":
-        return <>{comp}{renderField("Storage", storage, setStorage, "e.g. 20Gi")}</>;
+        return <>{componentSelect}{renderField("Storage", storage, setStorage, "e.g. 20Gi")}</>;
       case "Upgrade":
-        return renderField("Service Version", serviceVersion, setServiceVersion, "e.g. 8.0.33");
+        return renderSelect(
+          "Service Version",
+          serviceVersion,
+          setServiceVersion,
+          availableVersions.map((v) => ({ value: v, label: v })),
+          "-- Select Version --",
+        );
       case "Backup":
-        return renderField("Backup Method", backupMethod, setBackupMethod, "e.g. xtrabackup");
+        return renderSelect(
+          "Backup Method",
+          backupMethod,
+          setBackupMethod,
+          ["pg-basebackup", "volume-snapshot", "datafile", "xtrabackup", "wal-g", "aof"].map((m) => ({ value: m, label: m })),
+          "-- Select Method --",
+        );
       case "Restore":
-        return renderField("Backup Name", backupName, setBackupName, "e.g. my-backup-20240101");
+        return renderSelect(
+          "Backup to Restore",
+          backupName,
+          setBackupName,
+          clusterBackups.map((b) => ({
+            value: b.getName(),
+            label: `${b.getName()} (${Backup.getPhase(b)}, ${Backup.getSize(b) || "unknown size"})`,
+          })),
+          clusterBackups.length > 0 ? "-- Select Backup --" : "-- No backups found --",
+        );
       case "Expose":
         return (
           <>
-            {comp}
-            <div className={styles.field}>
-              <label>Service Type</label>
-              <select value={serviceType} onChange={(e) => setServiceType(e.target.value)}>
-                <option value="ClusterIP">ClusterIP</option>
-                <option value="NodePort">NodePort</option>
-                <option value="LoadBalancer">LoadBalancer</option>
-              </select>
-            </div>
+            {componentSelect}
+            {renderSelect("Service Type", serviceType, setServiceType, [
+              { value: "ClusterIP", label: "ClusterIP" },
+              { value: "NodePort", label: "NodePort" },
+              { value: "LoadBalancer", label: "LoadBalancer" },
+            ], "-- Select Type --")}
           </>
         );
       case "Switchover":
-        return <>{comp}{renderField("Instance Name", instanceName, setInstanceName, "e.g. mysql-0")}</>;
+        return <>{componentSelect}{renderField("Instance Name", instanceName, setInstanceName, "e.g. mysql-0")}</>;
       default:
         return <p>No additional configuration needed.</p>;
     }
@@ -219,7 +302,7 @@ export const CreateOperationPage = observer(() => {
                       <div
                         key={cl.getId()}
                         className={`${styles.card} ${clusterName === cl.getName() && namespace === cl.getNs() ? styles.selected : ""}`}
-                        onClick={() => { setClusterName(cl.getName()); setNamespace(cl.getNs() ?? ""); }}
+                        onClick={() => { setClusterName(cl.getName()); setNamespace(cl.getNs() ?? ""); setComponentName(""); }}
                       >
                         <strong>{cl.getName()}</strong>
                         <span className={styles.muted}>{cl.getNs()}</span>
