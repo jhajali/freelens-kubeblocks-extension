@@ -1,7 +1,8 @@
 import { Renderer } from "@freelensapp/extensions";
 import yaml from "js-yaml";
 import { observer } from "mobx-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { InfoPage } from "../components/info-page";
 import { getPhaseClass } from "../components/status-conditions";
 import { BackupPolicy } from "../k8s/kubeblocks/backup-policy-v1alpha1";
 import { Backup } from "../k8s/kubeblocks/backup-v1alpha1";
@@ -167,6 +168,7 @@ function getAvailableBackups(clusterName: string): Backup[] {
 }
 
 export const CreateOperationPage = observer(() => {
+  const [loaded, setLoaded] = useState(false);
   const [step, setStep] = useState<"cluster" | "type" | "config" | "review">("cluster");
   const [clusterName, setClusterName] = useState("");
   const [namespace, setNamespace] = useState("");
@@ -185,12 +187,52 @@ export const CreateOperationPage = observer(() => {
   const [reviewYaml, setReviewYaml] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const watches = useRef<(() => void)[]>([]);
+  const abortController = useRef(new AbortController());
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      const namespaceStore = Renderer.K8sApi.namespaceStore;
+      await namespaceStore.loadAll({ namespaces: [], reqInit: { signal: abortController.current.signal } });
+      watches.current.push(namespaceStore.subscribe());
+      const namespaces = namespaceStore.items.map((ns) => ns.getName());
+
+      for (const object of [Cluster, ComponentVersion, BackupPolicy, Backup]) {
+        try {
+          const store = object.getStore();
+          if (!store) continue;
+          if (object.namespaced) {
+            await store.loadAll({ namespaces, reqInit: { signal: abortController.current.signal } });
+          } else {
+            await store.loadAll({ reqInit: { signal: abortController.current.signal } });
+          }
+          watches.current.push(store.subscribe());
+        } catch (_) {
+          continue;
+        }
+      }
+
+      if (isMounted) setLoaded(true);
+    })();
+
+    return () => {
+      isMounted = false;
+      abortController.current.abort();
+      watches.current.forEach((w) => w());
+      watches.current = [];
+    };
+  }, []);
 
   let clusters: Cluster[] = [];
   try {
     const store = Cluster.getStore<Cluster>();
     if (store) clusters = store.contextItems;
   } catch (_) {}
+
+  if (!loaded) {
+    return <InfoPage message="Loading KubeBlocks resources..." />;
+  }
 
   // Get component specs from the selected cluster's spec (NOT from Component CRD resources)
   const componentSpecs = getClusterComponentSpecs(selectedCluster);
