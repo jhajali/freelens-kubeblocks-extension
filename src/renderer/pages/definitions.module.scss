@@ -1,0 +1,23 @@
+.page {
+  :global(.TableCell) {
+    &.provider {
+      flex-grow: 0.6;
+    }
+
+    &.description {
+      flex-grow: 1.5;
+    }
+
+    &.serviceKind {
+      flex-grow: 0.6;
+    }
+
+    &.serviceVersion {
+      flex-grow: 0.5;
+    }
+
+    &.age {
+      flex-grow: 0.3;
+    }
+  }
+}

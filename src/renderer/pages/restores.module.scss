@@ -1,0 +1,19 @@
+.page {
+  :global(.TableCell) {
+    &.backup {
+      flex-grow: 0.8;
+    }
+
+    &.targetCluster {
+      flex-grow: 0.8;
+    }
+
+    &.status {
+      flex-grow: 0.5;
+    }
+
+    &.age {
+      flex-grow: 0.3;
+    }
+  }
+}
