@@ -46,7 +46,11 @@ function buildManifest(
   serviceType: string,
   instanceName: string,
 ): string {
-  const name = `${clusterName}-${opsType.toLowerCase()}-${Math.floor(Date.now() / 1000)}`;
+  const shortType = opsType.toLowerCase().slice(0, 6);
+  const ts = Math.floor(Date.now() / 1000).toString(36);
+  const maxCluster = 30 - shortType.length - ts.length - 2;
+  const shortCluster = clusterName.length > maxCluster ? clusterName.slice(0, maxCluster) : clusterName;
+  const name = `${shortCluster}-${shortType}-${ts}`;
   const manifest: any = {
     apiVersion: "operations.kubeblocks.io/v1alpha1",
     kind: "OpsRequest",
