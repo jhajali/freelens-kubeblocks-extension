@@ -15,7 +15,6 @@ import stylesInline from "./create-operation.module.scss?inline";
 
 const {
   Component: { Badge, Button, Icon, MonacoEditor, TabLayout },
-  Navigation: { navigate },
 } = Renderer;
 
 const OPS_TYPES: { type: OpsRequestType; label: string; icon: string; description: string }[] = [
@@ -270,7 +269,9 @@ export const CreateOperationPage = observer(() => {
       });
       if (res.ok) {
         setResult({ ok: true, message: "OpsRequest created successfully! Redirecting..." });
-        setTimeout(() => navigate("/extension/kubeblocks-operations"), 1500);
+        setTimeout(() => {
+          window.history.back();
+        }, 1500);
       } else {
         const body = await res.text();
         setResult({ ok: false, message: `Failed: ${res.status} ${body}` });

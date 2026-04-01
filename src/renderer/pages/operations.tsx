@@ -46,7 +46,7 @@ export const OperationsPage = observer(() => {
           <p style={{ color: "var(--textColorSecondary)", margin: "16px 0" }}>
             No OpsRequest resources found. Create an operation to get started.
           </p>
-          <Button primary onClick={() => Renderer.Navigation.navigate("/extension/kubeblocks-create-operation")}>
+          <Button primary onClick={() => (Renderer.Navigation as any).navigate("/extension/kubeblocks-create-operation")}>
             <Icon material="add" /> Create Operation
           </Button>
         </div>
@@ -80,7 +80,7 @@ export const OperationsPage = observer(() => {
         ]}
         addRemoveButtons={{
           addTooltip: "Create Operation",
-          onAdd: () => Renderer.Navigation.navigate("/extension/kubeblocks-create-operation"),
+          onAdd: () => (Renderer.Navigation as any).navigate("/extension/kubeblocks-create-operation"),
         }}
       />
     </>
