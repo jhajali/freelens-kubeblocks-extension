@@ -3,6 +3,7 @@ import yaml from "js-yaml";
 import { observer } from "mobx-react";
 import { useState } from "react";
 import { getPhaseClass } from "../components/status-conditions";
+import { BackupPolicy } from "../k8s/kubeblocks/backup-policy-v1alpha1";
 import { Backup } from "../k8s/kubeblocks/backup-v1alpha1";
 import { Cluster } from "../k8s/kubeblocks/cluster-v1";
 import { ComponentVersion } from "../k8s/kubeblocks/component-version-v1";
@@ -137,6 +138,24 @@ function getAllVersions(): string[] {
   }
 }
 
+function getBackupMethods(clusterName: string): string[] {
+  try {
+    const store = BackupPolicy.getStore<BackupPolicy>();
+    if (!store) return [];
+    const methods = new Set<string>();
+    for (const bp of store.contextItems) {
+      if (BackupPolicy.getClusterName(bp) === clusterName) {
+        for (const m of BackupPolicy.getMethods(bp)) {
+          methods.add(m);
+        }
+      }
+    }
+    return [...methods].sort();
+  } catch (_) {
+    return [];
+  }
+}
+
 function getAvailableBackups(clusterName: string): Backup[] {
   try {
     const store = Backup.getStore<Backup>();
@@ -181,6 +200,7 @@ export const CreateOperationPage = observer(() => {
   const compDef = selectedCompSpec?.componentDef ?? selectedCompSpec?.componentDefRef ?? "";
   const availableVersions = compDef ? getVersionsForCompDef(compDef) : getAllVersions();
 
+  const clusterBackupMethods = clusterName ? getBackupMethods(clusterName) : [];
   const clusterBackups = clusterName ? getAvailableBackups(clusterName) : [];
 
   const goToReview = () => {
@@ -271,8 +291,8 @@ export const CreateOperationPage = observer(() => {
           "Backup Method",
           backupMethod,
           setBackupMethod,
-          ["pg-basebackup", "volume-snapshot", "datafile", "xtrabackup", "wal-g", "aof"].map((m) => ({ value: m, label: m })),
-          "-- Select Method --",
+          clusterBackupMethods.map((m) => ({ value: m, label: m })),
+          clusterBackupMethods.length > 0 ? "-- Select Method --" : "-- No backup methods found for this cluster --",
         );
       case "Restore":
         return renderSelect(
