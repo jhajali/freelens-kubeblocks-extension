@@ -1,14 +1,17 @@
 import { Renderer } from "@freelensapp/extensions";
 import { observer } from "mobx-react";
+import { useState, useEffect } from "react";
 import { withErrorPage } from "../components/error-page";
+import { WizardDialog, registerWizardOpener } from "../components/ops-wizard/wizard-dialog";
 import { getPhaseClass, getPhaseText } from "../components/status-conditions";
+import type { OpsRequestType } from "../k8s/kubeblocks/types";
 import { OpsRequest, type OpsRequestApi } from "../k8s/kubeblocks/opsrequest-v1alpha1";
 import { getOpsTypeIcon } from "../utils";
 import styles from "./operations.module.scss";
 import stylesInline from "./operations.module.scss?inline";
 
 const {
-  Component: { Badge, Icon, KubeObjectListLayout, KubeObjectAge, NamespaceSelectBadge, WithTooltip },
+  Component: { Badge, Button, Icon, KubeObjectListLayout, KubeObjectAge, NamespaceSelectBadge, WithTooltip },
 } = Renderer;
 
 const sortingCallbacks = {
@@ -31,8 +34,22 @@ const renderTableHeader = [
   { title: "Age", sortBy: "age" as const, className: styles.age },
 ];
 
-export const OperationsPage = observer(() =>
-  withErrorPage(() => {
+export const OperationsPage = observer(() => {
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardCluster, setWizardCluster] = useState<string | undefined>();
+  const [wizardNamespace, setWizardNamespace] = useState<string | undefined>();
+  const [wizardType, setWizardType] = useState<OpsRequestType | undefined>();
+
+  useEffect(() => {
+    registerWizardOpener((props) => {
+      setWizardCluster(props.preselectedCluster);
+      setWizardNamespace(props.preselectedNamespace);
+      setWizardType(props.preselectedType as OpsRequestType | undefined);
+      setWizardOpen(true);
+    });
+  }, []);
+
+  const pageContent = withErrorPage(() => {
     const store = OpsRequest.getStore<OpsRequest>();
 
     return (
@@ -59,8 +76,25 @@ export const OperationsPage = observer(() =>
             <WithTooltip>{OpsRequest.getProgress(object)}</WithTooltip>,
             <KubeObjectAge object={object} key="age" />,
           ]}
+          addRemoveButtons={{
+            addTooltip: "Create Operation",
+            onAdd: () => setWizardOpen(true),
+          }}
         />
       </>
     );
-  }),
-);
+  });
+
+  return (
+    <>
+      {pageContent}
+      <WizardDialog
+        isOpen={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        preselectedCluster={wizardCluster}
+        preselectedNamespace={wizardNamespace}
+        preselectedType={wizardType}
+      />
+    </>
+  );
+});

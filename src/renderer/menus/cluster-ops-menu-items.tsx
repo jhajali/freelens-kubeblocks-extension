@@ -1,5 +1,6 @@
 import { Renderer } from "@freelensapp/extensions";
 import type { Cluster } from "../k8s/kubeblocks/cluster-v1";
+import { openOpsWizard } from "../components/ops-wizard/wizard-dialog";
 import { getOpsTypeIcon } from "../utils";
 
 const {
@@ -103,6 +104,133 @@ export function StartClusterMenuItem(props: ClusterOpsMenuItemProps) {
     <MenuItem onClick={doStart}>
       <Icon material="play_arrow" interactive={toolbar} title="Start" />
       <span className="title">Start</span>
+    </MenuItem>
+  );
+}
+
+export function VerticalScaleMenuItem(props: ClusterOpsMenuItemProps) {
+  const { object, toolbar } = props;
+  if (!object) return <></>;
+
+  return (
+    <MenuItem onClick={() => openOpsWizard({
+      preselectedCluster: object.getName(),
+      preselectedNamespace: object.getNs() ?? "",
+      preselectedType: "VerticalScaling",
+    })}>
+      <Icon material="straighten" interactive={toolbar} title="Vertical Scale" />
+      <span className="title">Vertical Scale</span>
+    </MenuItem>
+  );
+}
+
+export function HorizontalScaleMenuItem(props: ClusterOpsMenuItemProps) {
+  const { object, toolbar } = props;
+  if (!object) return <></>;
+
+  return (
+    <MenuItem onClick={() => openOpsWizard({
+      preselectedCluster: object.getName(),
+      preselectedNamespace: object.getNs() ?? "",
+      preselectedType: "HorizontalScaling",
+    })}>
+      <Icon material="width_normal" interactive={toolbar} title="Horizontal Scale" />
+      <span className="title">Horizontal Scale</span>
+    </MenuItem>
+  );
+}
+
+export function VolumeExpandMenuItem(props: ClusterOpsMenuItemProps) {
+  const { object, toolbar } = props;
+  if (!object) return <></>;
+
+  return (
+    <MenuItem onClick={() => openOpsWizard({
+      preselectedCluster: object.getName(),
+      preselectedNamespace: object.getNs() ?? "",
+      preselectedType: "VolumeExpansion",
+    })}>
+      <Icon material="storage" interactive={toolbar} title="Volume Expand" />
+      <span className="title">Volume Expand</span>
+    </MenuItem>
+  );
+}
+
+export function UpgradeMenuItem(props: ClusterOpsMenuItemProps) {
+  const { object, toolbar } = props;
+  if (!object) return <></>;
+
+  return (
+    <MenuItem onClick={() => openOpsWizard({
+      preselectedCluster: object.getName(),
+      preselectedNamespace: object.getNs() ?? "",
+      preselectedType: "Upgrade",
+    })}>
+      <Icon material="upgrade" interactive={toolbar} title="Upgrade" />
+      <span className="title">Upgrade</span>
+    </MenuItem>
+  );
+}
+
+export function BackupMenuItem(props: ClusterOpsMenuItemProps) {
+  const { object, toolbar } = props;
+  if (!object) return <></>;
+
+  return (
+    <MenuItem onClick={() => openOpsWizard({
+      preselectedCluster: object.getName(),
+      preselectedNamespace: object.getNs() ?? "",
+      preselectedType: "Backup",
+    })}>
+      <Icon material="backup" interactive={toolbar} title="Backup" />
+      <span className="title">Backup</span>
+    </MenuItem>
+  );
+}
+
+export function ExposeMenuItem(props: ClusterOpsMenuItemProps) {
+  const { object, toolbar } = props;
+  if (!object) return <></>;
+
+  return (
+    <MenuItem onClick={() => openOpsWizard({
+      preselectedCluster: object.getName(),
+      preselectedNamespace: object.getNs() ?? "",
+      preselectedType: "Expose",
+    })}>
+      <Icon material="public" interactive={toolbar} title="Expose" />
+      <span className="title">Expose</span>
+    </MenuItem>
+  );
+}
+
+export function SwitchoverMenuItem(props: ClusterOpsMenuItemProps) {
+  const { object, toolbar } = props;
+  if (!object) return <></>;
+
+  return (
+    <MenuItem onClick={() => openOpsWizard({
+      preselectedCluster: object.getName(),
+      preselectedNamespace: object.getNs() ?? "",
+      preselectedType: "Switchover",
+    })}>
+      <Icon material="swap_horiz" interactive={toolbar} title="Switchover" />
+      <span className="title">Switchover</span>
+    </MenuItem>
+  );
+}
+
+export function CustomOperationMenuItem(props: ClusterOpsMenuItemProps) {
+  const { object, toolbar } = props;
+  if (!object) return <></>;
+
+  return (
+    <MenuItem onClick={() => openOpsWizard({
+      preselectedCluster: object.getName(),
+      preselectedNamespace: object.getNs() ?? "",
+    })}>
+      <Icon material="build" interactive={toolbar} title="Custom Operation" />
+      <span className="title">Custom Operation</span>
     </MenuItem>
   );
 }

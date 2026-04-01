@@ -23,9 +23,17 @@ import {
 } from "./menus/addon-menu-items";
 import {
   type ClusterOpsMenuItemProps,
+  BackupMenuItem,
+  CustomOperationMenuItem,
+  ExposeMenuItem,
+  HorizontalScaleMenuItem,
   RestartClusterMenuItem,
   StartClusterMenuItem,
   StopClusterMenuItem,
+  SwitchoverMenuItem,
+  UpgradeMenuItem,
+  VerticalScaleMenuItem,
+  VolumeExpandMenuItem,
 } from "./menus/cluster-ops-menu-items";
 import { AddonsPage } from "./pages/addons";
 import { BackupsPage } from "./pages/backups";
@@ -254,6 +262,62 @@ export default class KubeBlocksExtension extends Renderer.LensExtension {
       apiVersions: Cluster.crd.apiVersions,
       components: {
         MenuItem: (props: ClusterOpsMenuItemProps) => <StartClusterMenuItem {...props} resource={Cluster} />,
+      },
+    },
+    {
+      kind: Cluster.kind,
+      apiVersions: Cluster.crd.apiVersions,
+      components: {
+        MenuItem: (props: ClusterOpsMenuItemProps) => <VerticalScaleMenuItem {...props} resource={Cluster} />,
+      },
+    },
+    {
+      kind: Cluster.kind,
+      apiVersions: Cluster.crd.apiVersions,
+      components: {
+        MenuItem: (props: ClusterOpsMenuItemProps) => <HorizontalScaleMenuItem {...props} resource={Cluster} />,
+      },
+    },
+    {
+      kind: Cluster.kind,
+      apiVersions: Cluster.crd.apiVersions,
+      components: {
+        MenuItem: (props: ClusterOpsMenuItemProps) => <VolumeExpandMenuItem {...props} resource={Cluster} />,
+      },
+    },
+    {
+      kind: Cluster.kind,
+      apiVersions: Cluster.crd.apiVersions,
+      components: {
+        MenuItem: (props: ClusterOpsMenuItemProps) => <UpgradeMenuItem {...props} resource={Cluster} />,
+      },
+    },
+    {
+      kind: Cluster.kind,
+      apiVersions: Cluster.crd.apiVersions,
+      components: {
+        MenuItem: (props: ClusterOpsMenuItemProps) => <BackupMenuItem {...props} resource={Cluster} />,
+      },
+    },
+    {
+      kind: Cluster.kind,
+      apiVersions: Cluster.crd.apiVersions,
+      components: {
+        MenuItem: (props: ClusterOpsMenuItemProps) => <ExposeMenuItem {...props} resource={Cluster} />,
+      },
+    },
+    {
+      kind: Cluster.kind,
+      apiVersions: Cluster.crd.apiVersions,
+      components: {
+        MenuItem: (props: ClusterOpsMenuItemProps) => <SwitchoverMenuItem {...props} resource={Cluster} />,
+      },
+    },
+    {
+      kind: Cluster.kind,
+      apiVersions: Cluster.crd.apiVersions,
+      components: {
+        MenuItem: (props: ClusterOpsMenuItemProps) => <CustomOperationMenuItem {...props} resource={Cluster} />,
       },
     },
     {
