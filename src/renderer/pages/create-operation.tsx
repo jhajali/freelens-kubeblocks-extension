@@ -76,7 +76,7 @@ function buildManifest(
       }];
       break;
     case "Upgrade":
-      manifest.spec.upgrade = { serviceVersion };
+      manifest.spec.upgrade = { components: [{ componentName, serviceVersion }] };
       break;
     case "Backup": {
       const bkTs = Math.floor(Date.now() / 1000).toString(36);
@@ -325,12 +325,17 @@ export const CreateOperationPage = observer(() => {
       case "VolumeExpansion":
         return <>{componentSelect}{renderField("Storage", storage, setStorage, "e.g. 20Gi")}</>;
       case "Upgrade":
-        return renderSelect(
-          "Service Version",
-          serviceVersion,
-          setServiceVersion,
-          availableVersions.map((v) => ({ value: v, label: v })),
-          availableVersions.length > 0 ? "-- Select Version --" : "-- No versions found --",
+        return (
+          <>
+            {componentSelect}
+            {renderSelect(
+              "Service Version",
+              serviceVersion,
+              setServiceVersion,
+              availableVersions.map((v) => ({ value: v, label: v })),
+              availableVersions.length > 0 ? "-- Select Version --" : "-- No versions found --",
+            )}
+          </>
         );
       case "Backup":
         return renderSelect(
