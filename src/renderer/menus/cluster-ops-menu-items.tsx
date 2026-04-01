@@ -1,6 +1,8 @@
 import { Renderer } from "@freelensapp/extensions";
+import { useState } from "react";
+import { WizardDialog } from "../components/ops-wizard/wizard-dialog";
 import type { Cluster } from "../k8s/kubeblocks/cluster-v1";
-import { openOpsWizard } from "../components/ops-wizard/wizard-dialog";
+import type { OpsRequestType } from "../k8s/kubeblocks/types";
 
 const {
   Component: { MenuItem, Icon, ConfirmDialog },
@@ -106,129 +108,70 @@ export function StartClusterMenuItem(props: ClusterOpsMenuItemProps) {
   );
 }
 
-export function VerticalScaleMenuItem(props: ClusterOpsMenuItemProps) {
-  const { object, toolbar } = props;
+// Wizard-launching menu items: each renders its own WizardDialog inline
+// so it works regardless of which page the user is on
+
+function WizardMenuItem({
+  object,
+  toolbar,
+  icon,
+  label,
+  opsType,
+}: {
+  object: Cluster | undefined;
+  toolbar: boolean | undefined;
+  icon: string;
+  label: string;
+  opsType?: OpsRequestType;
+}) {
+  const [wizardOpen, setWizardOpen] = useState(false);
   if (!object) return <></>;
 
   return (
-    <MenuItem onClick={() => openOpsWizard({
-      preselectedCluster: object.getName(),
-      preselectedNamespace: object.getNs() ?? "",
-      preselectedType: "VerticalScaling",
-    })}>
-      <Icon material="straighten" interactive={toolbar} title="Vertical Scale" />
-      <span className="title">Vertical Scale</span>
-    </MenuItem>
+    <>
+      <MenuItem onClick={() => setWizardOpen(true)}>
+        <Icon material={icon} interactive={toolbar} title={label} />
+        <span className="title">{label}</span>
+      </MenuItem>
+      <WizardDialog
+        isOpen={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        preselectedCluster={object.getName()}
+        preselectedNamespace={object.getNs() ?? ""}
+        preselectedType={opsType}
+      />
+    </>
   );
+}
+
+export function VerticalScaleMenuItem(props: ClusterOpsMenuItemProps) {
+  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="straighten" label="Vertical Scale" opsType="VerticalScaling" />;
 }
 
 export function HorizontalScaleMenuItem(props: ClusterOpsMenuItemProps) {
-  const { object, toolbar } = props;
-  if (!object) return <></>;
-
-  return (
-    <MenuItem onClick={() => openOpsWizard({
-      preselectedCluster: object.getName(),
-      preselectedNamespace: object.getNs() ?? "",
-      preselectedType: "HorizontalScaling",
-    })}>
-      <Icon material="width_normal" interactive={toolbar} title="Horizontal Scale" />
-      <span className="title">Horizontal Scale</span>
-    </MenuItem>
-  );
+  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="width_normal" label="Horizontal Scale" opsType="HorizontalScaling" />;
 }
 
 export function VolumeExpandMenuItem(props: ClusterOpsMenuItemProps) {
-  const { object, toolbar } = props;
-  if (!object) return <></>;
-
-  return (
-    <MenuItem onClick={() => openOpsWizard({
-      preselectedCluster: object.getName(),
-      preselectedNamespace: object.getNs() ?? "",
-      preselectedType: "VolumeExpansion",
-    })}>
-      <Icon material="storage" interactive={toolbar} title="Volume Expand" />
-      <span className="title">Volume Expand</span>
-    </MenuItem>
-  );
+  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="storage" label="Volume Expand" opsType="VolumeExpansion" />;
 }
 
 export function UpgradeMenuItem(props: ClusterOpsMenuItemProps) {
-  const { object, toolbar } = props;
-  if (!object) return <></>;
-
-  return (
-    <MenuItem onClick={() => openOpsWizard({
-      preselectedCluster: object.getName(),
-      preselectedNamespace: object.getNs() ?? "",
-      preselectedType: "Upgrade",
-    })}>
-      <Icon material="upgrade" interactive={toolbar} title="Upgrade" />
-      <span className="title">Upgrade</span>
-    </MenuItem>
-  );
+  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="upgrade" label="Upgrade" opsType="Upgrade" />;
 }
 
 export function BackupMenuItem(props: ClusterOpsMenuItemProps) {
-  const { object, toolbar } = props;
-  if (!object) return <></>;
-
-  return (
-    <MenuItem onClick={() => openOpsWizard({
-      preselectedCluster: object.getName(),
-      preselectedNamespace: object.getNs() ?? "",
-      preselectedType: "Backup",
-    })}>
-      <Icon material="backup" interactive={toolbar} title="Backup" />
-      <span className="title">Backup</span>
-    </MenuItem>
-  );
+  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="backup" label="Backup" opsType="Backup" />;
 }
 
 export function ExposeMenuItem(props: ClusterOpsMenuItemProps) {
-  const { object, toolbar } = props;
-  if (!object) return <></>;
-
-  return (
-    <MenuItem onClick={() => openOpsWizard({
-      preselectedCluster: object.getName(),
-      preselectedNamespace: object.getNs() ?? "",
-      preselectedType: "Expose",
-    })}>
-      <Icon material="public" interactive={toolbar} title="Expose" />
-      <span className="title">Expose</span>
-    </MenuItem>
-  );
+  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="public" label="Expose" opsType="Expose" />;
 }
 
 export function SwitchoverMenuItem(props: ClusterOpsMenuItemProps) {
-  const { object, toolbar } = props;
-  if (!object) return <></>;
-
-  return (
-    <MenuItem onClick={() => openOpsWizard({
-      preselectedCluster: object.getName(),
-      preselectedNamespace: object.getNs() ?? "",
-      preselectedType: "Switchover",
-    })}>
-      <Icon material="swap_horiz" interactive={toolbar} title="Switchover" />
-      <span className="title">Switchover</span>
-    </MenuItem>
-  );
+  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="swap_horiz" label="Switchover" opsType="Switchover" />;
 }
 
 export function CustomOperationMenuItem(props: ClusterOpsMenuItemProps) {
-  const { object, toolbar } = props;
-  if (!object) return <></>;
-
-  return (
-    <MenuItem onClick={() => openOpsWizard({
-      preselectedCluster: object.getName(),
-      preselectedNamespace: object.getNs() ?? "",
-    })}>
-      <Icon material="build" interactive={toolbar} title="Custom Operation" />
-      <span className="title">Custom Operation</span>
-    </MenuItem>
-  );
+  return <WizardMenuItem object={props.object} toolbar={props.toolbar} icon="build" label="Custom Operation" />;
 }

@@ -1,10 +1,9 @@
 import { Renderer } from "@freelensapp/extensions";
 import { observer } from "mobx-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { withErrorPage } from "../components/error-page";
-import { WizardDialog, registerWizardOpener } from "../components/ops-wizard/wizard-dialog";
+import { WizardDialog } from "../components/ops-wizard/wizard-dialog";
 import { getPhaseClass, getPhaseText } from "../components/status-conditions";
-import type { OpsRequestType } from "../k8s/kubeblocks/types";
 import { OpsRequest, type OpsRequestApi } from "../k8s/kubeblocks/opsrequest-v1alpha1";
 import { getOpsTypeIcon } from "../utils";
 import styles from "./operations.module.scss";
@@ -36,18 +35,6 @@ const renderTableHeader = [
 
 export const OperationsPage = observer(() => {
   const [wizardOpen, setWizardOpen] = useState(false);
-  const [wizardCluster, setWizardCluster] = useState<string | undefined>();
-  const [wizardNamespace, setWizardNamespace] = useState<string | undefined>();
-  const [wizardType, setWizardType] = useState<OpsRequestType | undefined>();
-
-  useEffect(() => {
-    registerWizardOpener((props) => {
-      setWizardCluster(props.preselectedCluster);
-      setWizardNamespace(props.preselectedNamespace);
-      setWizardType(props.preselectedType as OpsRequestType | undefined);
-      setWizardOpen(true);
-    });
-  }, []);
 
   const pageContent = withErrorPage(() => {
     const store = OpsRequest.getStore<OpsRequest>();
@@ -91,9 +78,6 @@ export const OperationsPage = observer(() => {
       <WizardDialog
         isOpen={wizardOpen}
         onClose={() => setWizardOpen(false)}
-        preselectedCluster={wizardCluster}
-        preselectedNamespace={wizardNamespace}
-        preselectedType={wizardType}
       />
     </>
   );

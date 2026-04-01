@@ -152,13 +152,3 @@ export function WizardDialog({ isOpen, onClose, preselectedCluster, preselectedN
   );
 }
 
-// Global state for opening the wizard from menu items
-let _openWizard: ((props: Partial<WizardDialogProps>) => void) | null = null;
-
-export function registerWizardOpener(opener: (props: Partial<WizardDialogProps>) => void) {
-  _openWizard = opener;
-}
-
-export function openOpsWizard(props: Partial<WizardDialogProps> = {}) {
-  _openWizard?.(props);
-}
