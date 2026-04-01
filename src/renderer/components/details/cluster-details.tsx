@@ -3,7 +3,6 @@ import yaml from "js-yaml";
 import { observer } from "mobx-react";
 import { Cluster } from "../../k8s/kubeblocks/cluster-v1";
 import { defaultYamlDumpOptions, getHeight } from "../../utils";
-import { DurationAbsoluteTimestamp } from "../duration-absolute";
 import { getPhaseClass, getPhaseText } from "../status-conditions";
 import styles from "./cluster-details.module.scss";
 import stylesInline from "./cluster-details.module.scss?inline";

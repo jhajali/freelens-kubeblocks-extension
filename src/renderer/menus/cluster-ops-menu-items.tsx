@@ -1,13 +1,11 @@
 import { Renderer } from "@freelensapp/extensions";
 import type { Cluster } from "../k8s/kubeblocks/cluster-v1";
 import { openOpsWizard } from "../components/ops-wizard/wizard-dialog";
-import { getOpsTypeIcon } from "../utils";
 
 const {
   Component: { MenuItem, Icon, ConfirmDialog },
 } = Renderer;
 
-type KubeObject = Renderer.K8sApi.LensExtensionKubeObject<Renderer.K8sApi.KubeObjectMetadata, unknown, unknown>;
 type KubeObjectCtor = typeof Renderer.K8sApi.LensExtensionKubeObject<
   Renderer.K8sApi.KubeObjectMetadata,
   unknown,

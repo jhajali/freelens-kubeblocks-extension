@@ -1,10 +1,8 @@
 import { Renderer } from "@freelensapp/extensions";
 import yaml from "js-yaml";
-import { useState } from "react";
 import type { OpsRequestType } from "../../k8s/kubeblocks/types";
 import { defaultYamlDumpOptions, getHeight } from "../../utils";
 import type { OpsConfig } from "./step-configure";
-import styles from "./ops-wizard.module.scss";
 
 const {
   Component: { MonacoEditor },

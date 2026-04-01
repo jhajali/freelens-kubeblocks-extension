@@ -11,7 +11,7 @@ import styles from "./operations.module.scss";
 import stylesInline from "./operations.module.scss?inline";
 
 const {
-  Component: { Badge, Button, Icon, KubeObjectListLayout, KubeObjectAge, NamespaceSelectBadge, WithTooltip },
+  Component: { Badge, Icon, KubeObjectListLayout, KubeObjectAge, NamespaceSelectBadge, WithTooltip },
 } = Renderer;
 
 const sortingCallbacks = {

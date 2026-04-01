@@ -1,11 +1,6 @@
-import { Renderer } from "@freelensapp/extensions";
 import { observer } from "mobx-react";
 import { Cluster } from "../../k8s/kubeblocks/cluster-v1";
 import styles from "./ops-wizard.module.scss";
-
-const {
-  Component: { Badge },
-} = Renderer;
 
 export interface StepSelectClusterProps {
   selectedCluster: string;
