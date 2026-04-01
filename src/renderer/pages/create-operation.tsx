@@ -6,21 +6,21 @@ import { getPhaseClass } from "../components/status-conditions";
 import { Backup } from "../k8s/kubeblocks/backup-v1alpha1";
 import { Cluster } from "../k8s/kubeblocks/cluster-v1";
 import { ComponentVersion } from "../k8s/kubeblocks/component-version-v1";
-import { Component } from "../k8s/kubeblocks/component-v1";
-import type { OpsRequestType } from "../k8s/kubeblocks/types";
+import type { ClusterComponentSpec, OpsRequestType } from "../k8s/kubeblocks/types";
 import { defaultYamlDumpOptions, getHeight } from "../utils";
 import styles from "./create-operation.module.scss";
 import stylesInline from "./create-operation.module.scss?inline";
 
 const {
   Component: { Badge, Button, Icon, MonacoEditor, TabLayout },
+  Navigation: { navigate },
 } = Renderer;
 
 const OPS_TYPES: { type: OpsRequestType; label: string; icon: string; description: string }[] = [
   { type: "Restart", label: "Restart", icon: "restart_alt", description: "Restart all pods" },
   { type: "Stop", label: "Stop", icon: "stop", description: "Stop the cluster" },
   { type: "Start", label: "Start", icon: "play_arrow", description: "Start a stopped cluster" },
-  { type: "HorizontalScaling", label: "Horizontal Scale", icon: "width_normal", description: "Change replica count" },
+  { type: "HorizontalScaling", label: "Horizontal Scale", icon: "view_column", description: "Change replica count" },
   { type: "VerticalScaling", label: "Vertical Scale", icon: "straighten", description: "Change CPU/memory" },
   { type: "VolumeExpansion", label: "Volume Expand", icon: "storage", description: "Increase storage size" },
   { type: "Upgrade", label: "Upgrade", icon: "upgrade", description: "Upgrade service version" },
@@ -94,17 +94,34 @@ function buildManifest(
   return yaml.dump(manifest, defaultYamlDumpOptions);
 }
 
-function getClusterComponents(clusterName: string): Component[] {
+function getClusterComponentSpecs(cluster: Cluster | undefined): ClusterComponentSpec[] {
+  if (!cluster) return [];
+  return Cluster.getComponentSpecs(cluster);
+}
+
+function getVersionsForCompDef(compDef: string): string[] {
   try {
-    const store = Component.getStore<Component>();
+    const store = ComponentVersion.getStore<ComponentVersion>();
     if (!store) return [];
-    return store.contextItems.filter((c) => Component.getClusterName(c) === clusterName);
+    const versions = new Set<string>();
+    for (const cv of store.contextItems) {
+      const rules = cv.spec?.compatibilityRules ?? [];
+      const matchesCompDef = rules.some((rule) =>
+        rule.compDefs?.some((cd) => compDef.startsWith(cd) || cd.startsWith(compDef.split("-")[0])),
+      );
+      if (matchesCompDef || rules.length === 0) {
+        for (const v of ComponentVersion.getServiceVersions(cv)) {
+          versions.add(v);
+        }
+      }
+    }
+    return [...versions].sort();
   } catch (_) {
     return [];
   }
 }
 
-function getAvailableVersions(): string[] {
+function getAllVersions(): string[] {
   try {
     const store = ComponentVersion.getStore<ComponentVersion>();
     if (!store) return [];
@@ -134,6 +151,7 @@ export const CreateOperationPage = observer(() => {
   const [step, setStep] = useState<"cluster" | "type" | "config" | "review">("cluster");
   const [clusterName, setClusterName] = useState("");
   const [namespace, setNamespace] = useState("");
+  const [selectedCluster, setSelectedCluster] = useState<Cluster | undefined>();
   const [opsType, setOpsType] = useState<OpsRequestType | "">("");
   const [componentName, setComponentName] = useState("");
   const [replicas, setReplicas] = useState("");
@@ -155,8 +173,14 @@ export const CreateOperationPage = observer(() => {
     if (store) clusters = store.contextItems;
   } catch (_) {}
 
-  const clusterComponents = clusterName ? getClusterComponents(clusterName) : [];
-  const availableVersions = getAvailableVersions();
+  // Get component specs from the selected cluster's spec (NOT from Component CRD resources)
+  const componentSpecs = getClusterComponentSpecs(selectedCluster);
+
+  // Get the compDef for the selected component to filter versions
+  const selectedCompSpec = componentSpecs.find((c) => c.name === componentName);
+  const compDef = selectedCompSpec?.componentDef ?? selectedCompSpec?.componentDefRef ?? "";
+  const availableVersions = compDef ? getVersionsForCompDef(compDef) : getAllVersions();
+
   const clusterBackups = clusterName ? getAvailableBackups(clusterName) : [];
 
   const goToReview = () => {
@@ -183,7 +207,8 @@ export const CreateOperationPage = observer(() => {
         body: JSON.stringify(manifest),
       });
       if (res.ok) {
-        setResult({ ok: true, message: "OpsRequest created successfully!" });
+        setResult({ ok: true, message: "OpsRequest created successfully! Redirecting..." });
+        setTimeout(() => navigate("/extension/kubeblocks-operations"), 1500);
       } else {
         const body = await res.text();
         setResult({ ok: false, message: `Failed: ${res.status} ${body}` });
@@ -218,11 +243,11 @@ export const CreateOperationPage = observer(() => {
     "Component",
     componentName,
     setComponentName,
-    clusterComponents.map((c) => ({
-      value: c.getName(),
-      label: `${c.getName()} (${Component.getDefinition(c)}, ${Component.getReplicas(c)} replicas)`,
+    componentSpecs.map((c) => ({
+      value: c.name ?? "",
+      label: `${c.name} (${c.componentDef ?? c.componentDefRef ?? ""}, ${c.replicas ?? 0} replicas)`,
     })),
-    "-- Select Component --",
+    componentSpecs.length > 0 ? "-- Select Component --" : "-- No components found --",
   );
 
   const renderConfigFields = () => {
@@ -239,7 +264,7 @@ export const CreateOperationPage = observer(() => {
           serviceVersion,
           setServiceVersion,
           availableVersions.map((v) => ({ value: v, label: v })),
-          "-- Select Version --",
+          availableVersions.length > 0 ? "-- Select Version --" : "-- No versions found --",
         );
       case "Backup":
         return renderSelect(
@@ -306,7 +331,12 @@ export const CreateOperationPage = observer(() => {
                       <div
                         key={cl.getId()}
                         className={`${styles.card} ${clusterName === cl.getName() && namespace === cl.getNs() ? styles.selected : ""}`}
-                        onClick={() => { setClusterName(cl.getName()); setNamespace(cl.getNs() ?? ""); setComponentName(""); }}
+                        onClick={() => {
+                          setClusterName(cl.getName());
+                          setNamespace(cl.getNs() ?? "");
+                          setSelectedCluster(cl);
+                          setComponentName("");
+                        }}
                       >
                         <strong>{cl.getName()}</strong>
                         <span className={styles.muted}>{cl.getNs()}</span>

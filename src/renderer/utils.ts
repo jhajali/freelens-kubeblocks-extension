@@ -79,7 +79,7 @@ export function getOpsTypeIcon(type?: string): string {
     case "VerticalScaling":
       return "straighten";
     case "HorizontalScaling":
-      return "width_normal";
+      return "view_column";
     case "VolumeExpansion":
       return "storage";
     case "Upgrade":
