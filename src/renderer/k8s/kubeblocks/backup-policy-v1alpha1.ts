@@ -1,4 +1,5 @@
 import { Renderer } from "@freelensapp/extensions";
+
 import type { KubeBlocksKubeObjectCRD, KubeBlocksKubeObjectStatus } from "./types";
 
 export interface BackupPolicyMethod {
@@ -24,6 +25,9 @@ export class BackupPolicy extends Renderer.K8sApi.LensExtensionKubeObject<
   BackupPolicyStatus,
   BackupPolicySpec
 > {
+  declare kind: "BackupPolicy";
+  declare apiVersion: "dataprotection.kubeblocks.io/v1alpha1";
+
   static readonly kind = "BackupPolicy";
   static readonly namespaced = true;
   static readonly apiBase = "/apis/dataprotection.kubeblocks.io/v1alpha1/backuppolicies";
@@ -46,4 +50,4 @@ export class BackupPolicy extends Renderer.K8sApi.LensExtensionKubeObject<
 }
 
 export class BackupPolicyApi extends Renderer.K8sApi.KubeApi<BackupPolicy> {}
-export class BackupPolicyStore extends Renderer.K8sApi.KubeObjectStore<BackupPolicy> {}
+export class BackupPolicyStore extends Renderer.K8sApi.KubeObjectStore<BackupPolicy, BackupPolicyApi> {}

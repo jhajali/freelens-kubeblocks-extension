@@ -1,10 +1,9 @@
 import { Renderer } from "@freelensapp/extensions";
 import { observer } from "mobx-react";
-import { withErrorPage } from "../components/error-page";
+import { whenStoreAvailable } from "../components/store-available";
 import { ClusterDefinition, type ClusterDefinitionApi } from "../k8s/kubeblocks/cluster-definition-v1";
 import { ComponentDefinition, type ComponentDefinitionApi } from "../k8s/kubeblocks/component-definition-v1";
 import styles from "./definitions.module.scss";
-import stylesInline from "./definitions.module.scss?inline";
 
 const {
   Component: { KubeObjectListLayout, KubeObjectAge, WithTooltip, TabLayout },
@@ -41,7 +40,7 @@ const cmpRenderTableHeader = [
 ];
 
 const ClusterDefinitionsTab = observer(() =>
-  withErrorPage(() => {
+  whenStoreAvailable(() => {
     const store = ClusterDefinition.getStore<ClusterDefinition>();
 
     return (
@@ -65,7 +64,7 @@ const ClusterDefinitionsTab = observer(() =>
 );
 
 const ComponentDefinitionsTab = observer(() =>
-  withErrorPage(() => {
+  whenStoreAvailable(() => {
     const store = ComponentDefinition.getStore<ComponentDefinition>();
 
     return (
@@ -92,7 +91,6 @@ const ComponentDefinitionsTab = observer(() =>
 export const DefinitionsPage = observer(() => {
   return (
     <>
-      <style>{stylesInline}</style>
       <TabLayout>
         <div data-tab-id="cluster-definitions" data-title="Cluster Definitions">
           <ClusterDefinitionsTab />

@@ -5,11 +5,13 @@ A [Freelens](https://github.com/freelensapp/freelens) extension for managing [Ku
 ## Features
 
 ### Cluster Management
+
 - **Clusters** — List all KubeBlocks clusters with phase, definition, and component count
 - **Components** — View individual components within clusters with replicas and resource details
 - **Overview Dashboard** — Cluster status pie chart, active operations, recent backups/restores, and filtered KubeBlocks events
 
 ### Operations
+
 - **Create Operation** — Guided 4-step form to create OpsRequests:
   - Select cluster from a visual grid
   - Choose operation type (Restart, Stop, Start, Scale, Upgrade, Backup, Restore, Expose, Switchover, Reconfigure)
@@ -19,6 +21,7 @@ A [Freelens](https://github.com/freelensapp/freelens) extension for managing [Ku
 - **Context Menu Actions** — Right-click any cluster for quick Restart, Stop, or Start
 
 ### Data Protection
+
 - **Backups** — List backup resources with status, size, and duration
 - **Restores** — Track restore operations
 - **Backup Locations** — Manage BackupRepo resources with a create form that dynamically renders fields from StorageProvider schemas (S3, MinIO, Azure Blob, GCS, NFS, PVC, etc.)
@@ -26,10 +29,12 @@ A [Freelens](https://github.com/freelensapp/freelens) extension for managing [Ku
 - **Backup Schedules** — View schedules with enabled/total counts
 
 ### Definitions
+
 - **Cluster Definitions** — Browse available cluster templates
 - **Component Definitions** — Inspect component templates with service kind, version, and roles
 
 ### Detail Views
+
 Click any resource to see a detail panel with:
 - Key fields displayed as drawer items
 - Status conditions table
@@ -37,20 +42,20 @@ Click any resource to see a detail panel with:
 
 ## Supported CRDs
 
-| CRD | API Group | Version |
-|-----|-----------|---------|
-| Cluster | `apps.kubeblocks.io` | `v1` |
-| Component | `apps.kubeblocks.io` | `v1` |
-| ClusterDefinition | `apps.kubeblocks.io` | `v1` |
-| ComponentDefinition | `apps.kubeblocks.io` | `v1` |
-| ComponentVersion | `apps.kubeblocks.io` | `v1` |
-| OpsRequest | `operations.kubeblocks.io` | `v1alpha1` |
-| Backup | `dataprotection.kubeblocks.io` | `v1alpha1` |
-| Restore | `dataprotection.kubeblocks.io` | `v1alpha1` |
-| BackupRepo | `dataprotection.kubeblocks.io` | `v1alpha1` |
-| BackupPolicy | `dataprotection.kubeblocks.io` | `v1alpha1` |
-| BackupSchedule | `dataprotection.kubeblocks.io` | `v1alpha1` |
-| StorageProvider | `dataprotection.kubeblocks.io` | `v1alpha1` |
+| CRD                 | API Group                      | Version    |
+| ------------------- | ------------------------------ | ---------- |
+| Cluster             | `apps.kubeblocks.io`           | `v1`       |
+| Component           | `apps.kubeblocks.io`           | `v1`       |
+| ClusterDefinition   | `apps.kubeblocks.io`           | `v1`       |
+| ComponentDefinition | `apps.kubeblocks.io`           | `v1`       |
+| ComponentVersion    | `apps.kubeblocks.io`           | `v1`       |
+| OpsRequest          | `operations.kubeblocks.io`     | `v1alpha1` |
+| Backup              | `dataprotection.kubeblocks.io` | `v1alpha1` |
+| Restore             | `dataprotection.kubeblocks.io` | `v1alpha1` |
+| BackupRepo          | `dataprotection.kubeblocks.io` | `v1alpha1` |
+| BackupPolicy        | `dataprotection.kubeblocks.io` | `v1alpha1` |
+| BackupSchedule      | `dataprotection.kubeblocks.io` | `v1alpha1` |
+| StorageProvider     | `dataprotection.kubeblocks.io` | `v1alpha1` |
 
 Pages gracefully degrade when CRDs are not installed in the cluster.
 
@@ -76,29 +81,23 @@ Then install the generated `.tgz` in Freelens.
 
 ## Requirements
 
-- Freelens >= 1.6.0
-- Node.js >= 22.16.0
+- Freelens >= 2.0.0
+- Node.js >= 24.0.0 (for building)
 - KubeBlocks installed in the target cluster
 
 ## Development
 
 ```bash
 make install        # Install dependencies
-make build          # Build with type checking
-make build-force    # Build without type checking
+make build          # Type check, then build dist/
 make type-check     # TypeScript validation only
+make test           # Unit tests
 make pack           # Build and create .tgz
 make clean          # Remove build output
 ```
 
-After building, deploy to Freelens for testing:
-
-```bash
-make pack
-cp -r out ~/.freelens/extensions/freelensapp--kubeblocks-extension/out
-```
-
-Then restart Freelens.
+For a development loop, install this directory from the Extensions page of Freelens (load it in place),
+then run `pnpm dev`: Freelens reloads the extension when `dist/` is rebuilt.
 
 ## License
 

@@ -1,4 +1,5 @@
 import { Renderer } from "@freelensapp/extensions";
+
 import type { KubeBlocksKubeObjectCRD, KubeBlocksKubeObjectStatus } from "./types";
 
 export interface ComponentDefinitionSpec {
@@ -23,6 +24,9 @@ export class ComponentDefinition extends Renderer.K8sApi.LensExtensionKubeObject
   ComponentDefinitionStatus,
   ComponentDefinitionSpec
 > {
+  declare kind: "ComponentDefinition";
+  declare apiVersion: "apps.kubeblocks.io/v1" | "apps.kubeblocks.io/v1alpha1";
+
   static readonly kind = "ComponentDefinition";
   static readonly namespaced = false;
   static readonly apiBase = "/apis/apps.kubeblocks.io/v1/componentdefinitions";
@@ -53,4 +57,7 @@ export class ComponentDefinition extends Renderer.K8sApi.LensExtensionKubeObject
 }
 
 export class ComponentDefinitionApi extends Renderer.K8sApi.KubeApi<ComponentDefinition> {}
-export class ComponentDefinitionStore extends Renderer.K8sApi.KubeObjectStore<ComponentDefinition> {}
+export class ComponentDefinitionStore extends Renderer.K8sApi.KubeObjectStore<
+  ComponentDefinition,
+  ComponentDefinitionApi
+> {}

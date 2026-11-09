@@ -1,8 +1,8 @@
 import { Renderer } from "@freelensapp/extensions";
 import styles from "./pie-chart.module.scss";
-import stylesInline from "./pie-chart.module.scss?inline";
 
 import type React from "react";
+
 import type { Cluster } from "../k8s/kubeblocks/cluster-v1";
 
 const getPhaseStats = (objects: Cluster[]) => {
@@ -48,9 +48,10 @@ export function ClusterPhasePieChart(props: ClusterPhasePieChartProps): React.Re
 
   return (
     <>
-      <style>{stylesInline}</style>
       <div className={styles.title}>
-        <span>{title} ({objects.length})</span>
+        <span>
+          {title} ({objects.length})
+        </span>
       </div>
       <Renderer.Component.PieChart data={chartData} />
     </>

@@ -1,4 +1,5 @@
 import { Renderer } from "@freelensapp/extensions";
+
 import type { KubeBlocksKubeObjectCRD, KubeBlocksKubeObjectStatus, RestorePhase } from "./types";
 
 export interface RestoreSpec {
@@ -20,6 +21,9 @@ export class Restore extends Renderer.K8sApi.LensExtensionKubeObject<
   RestoreStatus,
   RestoreSpec
 > {
+  declare kind: "Restore";
+  declare apiVersion: "dataprotection.kubeblocks.io/v1alpha1";
+
   static readonly kind = "Restore";
   static readonly namespaced = true;
   static readonly apiBase = "/apis/dataprotection.kubeblocks.io/v1alpha1/restores";
@@ -54,4 +58,4 @@ export class Restore extends Renderer.K8sApi.LensExtensionKubeObject<
 }
 
 export class RestoreApi extends Renderer.K8sApi.KubeApi<Restore> {}
-export class RestoreStore extends Renderer.K8sApi.KubeObjectStore<Restore> {}
+export class RestoreStore extends Renderer.K8sApi.KubeObjectStore<Restore, RestoreApi> {}

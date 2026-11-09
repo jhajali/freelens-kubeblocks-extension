@@ -5,7 +5,6 @@ import { Component } from "../../k8s/kubeblocks/component-v1";
 import { defaultYamlDumpOptions, getHeight } from "../../utils";
 import { getPhaseClass, getPhaseText } from "../status-conditions";
 import styles from "./component-details.module.scss";
-import stylesInline from "./component-details.module.scss?inline";
 
 const {
   Component: { Badge, DrawerItem, DrawerTitle, MonacoEditor },
@@ -17,13 +16,15 @@ export const ComponentDetails: React.FC<Renderer.Component.KubeObjectDetailsProp
 
   return (
     <>
-      <style>{stylesInline}</style>
       <div className={styles.details}>
         <DrawerItem name="Cluster">{Component.getClusterName(object)}</DrawerItem>
         <DrawerItem name="Definition">{Component.getDefinition(object)}</DrawerItem>
         <DrawerItem name="Replicas">{Component.getReplicas(object)}</DrawerItem>
         <DrawerItem name="Phase">
-          <Badge label={getPhaseText(Component.getPhase(object))} className={getPhaseClass(Component.getPhase(object))} />
+          <Badge
+            label={getPhaseText(Component.getPhase(object))}
+            className={getPhaseClass(Component.getPhase(object))}
+          />
         </DrawerItem>
 
         <DrawerItem name="CPU Request" hidden={!object.spec?.resources?.requests?.cpu}>
@@ -46,7 +47,9 @@ export const ComponentDetails: React.FC<Renderer.Component.KubeObjectDetailsProp
               <div key={`condition-${i}`}>
                 <DrawerItem name="Type">{condition.type}</DrawerItem>
                 <DrawerItem name="Status">{condition.status}</DrawerItem>
-                <DrawerItem name="Message" hidden={!condition.message}>{condition.message}</DrawerItem>
+                <DrawerItem name="Message" hidden={!condition.message}>
+                  {condition.message}
+                </DrawerItem>
               </div>
             ))}
           </div>

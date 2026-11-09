@@ -1,14 +1,13 @@
 import { Common, Renderer } from "@freelensapp/extensions";
 import yaml from "js-yaml";
 import { observer } from "mobx-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { InfoPage } from "../components/info-page";
 import { getPhaseClass, getPhaseText } from "../components/status-conditions";
 import { BackupRepo, type BackupRepoApi } from "../k8s/kubeblocks/backup-repo-v1alpha1";
 import { StorageProvider } from "../k8s/kubeblocks/storage-provider-v1alpha1";
 import { defaultYamlDumpOptions, getHeight } from "../utils";
 import styles from "./backup-locations.module.scss";
-import stylesInline from "./backup-locations.module.scss?inline";
 
 const {
   Component: { Badge, Button, Icon, KubeObjectListLayout, KubeObjectAge, MonacoEditor, TabLayout, WithTooltip },
@@ -20,7 +19,7 @@ const sortingCallbacks = {
   phase: (object: BackupRepo) => BackupRepo.getPhase(object),
   accessMethod: (object: BackupRepo) => BackupRepo.getAccessMethod(object),
   bucket: (object: BackupRepo) => BackupRepo.getBucket(object),
-  isDefault: (object: BackupRepo) => BackupRepo.isDefault(object) ? 1 : 0,
+  isDefault: (object: BackupRepo) => (BackupRepo.isDefault(object) ? 1 : 0),
   age: (object: BackupRepo) => object.getCreationTimestamp(),
 };
 
@@ -49,27 +48,29 @@ export const BackupLocationsPage = observer(() => {
   const [showReview, setShowReview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
-  const watches = useRef<(() => void)[]>([]);
-  const abortController = useRef(new AbortController());
 
   useEffect(() => {
     let isMounted = true;
+    // Created per run: React.StrictMode runs the effect twice, and the first cleanup aborts its own controller only.
+    const watches: (() => void)[] = [];
+    const abortController = new AbortController();
     (async () => {
       for (const object of [BackupRepo, StorageProvider]) {
         try {
           const store = object.getStore();
           if (!store) continue;
-          await store.loadAll({ reqInit: { signal: abortController.current.signal } });
-          watches.current.push(store.subscribe());
-        } catch (_) { continue; }
+          await store.loadAll({ reqInit: { signal: abortController.signal } });
+          if (!abortController.signal.aborted) watches.push(store.subscribe());
+        } catch (_) {
+          continue;
+        }
       }
       if (isMounted) setLoaded(true);
     })();
     return () => {
       isMounted = false;
-      abortController.current.abort();
-      watches.current.forEach((w) => w());
-      watches.current = [];
+      abortController.abort();
+      watches.forEach((w) => w());
     };
   }, []);
 
@@ -116,7 +117,11 @@ export const BackupLocationsPage = observer(() => {
       });
       if (res.ok) {
         setResult({ ok: true, message: "Backup location created!" });
-        setTimeout(() => { setShowCreate(false); setShowReview(false); setResult(null); }, 1500);
+        setTimeout(() => {
+          setShowCreate(false);
+          setShowReview(false);
+          setResult(null);
+        }, 1500);
       } else {
         const body = await res.text();
         setResult({ ok: false, message: `Failed: ${res.status} ${body}` });
@@ -133,7 +138,6 @@ export const BackupLocationsPage = observer(() => {
   if (showCreate) {
     return (
       <>
-        <style>{stylesInline}</style>
         <TabLayout>
           <div className={styles.page}>
             <header>
@@ -144,15 +148,28 @@ export const BackupLocationsPage = observer(() => {
                 <div className={styles.form}>
                   <div className={styles.field}>
                     <label>Name</label>
-                    <input type="text" value={repoName} onChange={(e) => setRepoName(e.target.value)} placeholder="e.g. my-s3-repo" />
+                    <input
+                      type="text"
+                      value={repoName}
+                      onChange={(e) => setRepoName(e.target.value)}
+                      placeholder="e.g. my-s3-repo"
+                    />
                   </div>
 
                   <div className={styles.field}>
                     <label>Storage Provider</label>
-                    <select value={providerName} onChange={(e) => { setProviderName(e.target.value); setConfigValues({}); }}>
+                    <select
+                      value={providerName}
+                      onChange={(e) => {
+                        setProviderName(e.target.value);
+                        setConfigValues({});
+                      }}
+                    >
                       <option value="">-- Select Provider --</option>
                       {providers.map((p) => (
-                        <option key={p.getName()} value={p.getName()}>{p.getName()}</option>
+                        <option key={p.getName()} value={p.getName()}>
+                          {p.getName()}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -176,8 +193,12 @@ export const BackupLocationsPage = observer(() => {
 
                   <div className={styles.field}>
                     <label>
-                      <input type="checkbox" checked={isDefaultRepo} onChange={(e) => setIsDefaultRepo(e.target.checked)} />
-                      {" "}Set as default backup location
+                      <input
+                        type="checkbox"
+                        checked={isDefaultRepo}
+                        onChange={(e) => setIsDefaultRepo(e.target.checked)}
+                      />{" "}
+                      Set as default backup location
                     </label>
                   </div>
 
@@ -186,7 +207,12 @@ export const BackupLocationsPage = observer(() => {
                       <h6>Configuration</h6>
                       {configFields.map((field) => (
                         <div className={styles.field} key={field}>
-                          <label>{field} <span className={styles.hint}>{selectedProvider ? StorageProvider.getFieldDescription(selectedProvider, field) : ""}</span></label>
+                          <label>
+                            {field}{" "}
+                            <span className={styles.hint}>
+                              {selectedProvider ? StorageProvider.getFieldDescription(selectedProvider, field) : ""}
+                            </span>
+                          </label>
                           <input
                             type="text"
                             value={configValues[field] ?? ""}
@@ -207,19 +233,38 @@ export const BackupLocationsPage = observer(() => {
                       <div className={styles.row}>
                         <div className={styles.field}>
                           <label>Secret Name</label>
-                          <input type="text" value={credSecretName} onChange={(e) => setCredSecretName(e.target.value)} placeholder="e.g. my-s3-credentials" />
+                          <input
+                            type="text"
+                            value={credSecretName}
+                            onChange={(e) => setCredSecretName(e.target.value)}
+                            placeholder="e.g. my-s3-credentials"
+                          />
                         </div>
                         <div className={styles.field}>
                           <label>Secret Namespace</label>
-                          <input type="text" value={credSecretNamespace} onChange={(e) => setCredSecretNamespace(e.target.value)} placeholder="kb-system" />
+                          <input
+                            type="text"
+                            value={credSecretNamespace}
+                            onChange={(e) => setCredSecretNamespace(e.target.value)}
+                            placeholder="kb-system"
+                          />
                         </div>
                       </div>
                     </>
                   )}
 
                   <div className={styles.actions}>
-                    <Button plain onClick={() => setShowCreate(false)}>Cancel</Button>
-                    <Button primary disabled={!repoName || !providerName} onClick={() => { setReviewYaml(buildManifest()); setShowReview(true); }}>
+                    <Button plain onClick={() => setShowCreate(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      primary
+                      disabled={!repoName || !providerName}
+                      onClick={() => {
+                        setReviewYaml(buildManifest());
+                        setShowReview(true);
+                      }}
+                    >
                       Review YAML
                     </Button>
                   </div>
@@ -233,11 +278,11 @@ export const BackupLocationsPage = observer(() => {
                     onChange={(v) => setReviewYaml(v)}
                     options={{ scrollbar: { alwaysConsumeMouseWheel: false } }}
                   />
-                  {result && (
-                    <p className={result.ok ? styles.success : styles.error}>{result.message}</p>
-                  )}
+                  {result && <p className={result.ok ? styles.success : styles.error}>{result.message}</p>}
                   <div className={styles.actions}>
-                    <Button plain onClick={() => setShowReview(false)}>Back</Button>
+                    <Button plain onClick={() => setShowReview(false)}>
+                      Back
+                    </Button>
                     <Button primary onClick={doSubmit} disabled={submitting || !reviewYaml}>
                       {submitting ? "Creating..." : "Create"}
                     </Button>
@@ -251,7 +296,7 @@ export const BackupLocationsPage = observer(() => {
     );
   }
 
-  let store: any = null;
+  let store: Renderer.K8sApi.KubeObjectStore<BackupRepo, BackupRepoApi> | null = null;
   try {
     store = BackupRepo.getStore<BackupRepo>();
   } catch (e) {
@@ -276,7 +321,6 @@ export const BackupLocationsPage = observer(() => {
 
   return (
     <>
-      <style>{stylesInline}</style>
       <KubeObjectListLayout<BackupRepo, BackupRepoApi>
         tableId="backupreposTable"
         className={styles.listPage}
@@ -288,9 +332,15 @@ export const BackupLocationsPage = observer(() => {
         renderTableContents={(object: BackupRepo) => [
           <WithTooltip>{object.getName()}</WithTooltip>,
           <WithTooltip>{BackupRepo.getProvider(object)}</WithTooltip>,
-          <Badge label={getPhaseText(BackupRepo.getPhase(object))} className={getPhaseClass(BackupRepo.getPhase(object))} />,
+          <Badge
+            label={getPhaseText(BackupRepo.getPhase(object))}
+            className={getPhaseClass(BackupRepo.getPhase(object))}
+          />,
           <WithTooltip>{BackupRepo.getAccessMethod(object)}</WithTooltip>,
-          <WithTooltip>{BackupRepo.getBucket(object)}{BackupRepo.getRegion(object) ? ` (${BackupRepo.getRegion(object)})` : ""}</WithTooltip>,
+          <WithTooltip>
+            {BackupRepo.getBucket(object)}
+            {BackupRepo.getRegion(object) ? ` (${BackupRepo.getRegion(object)})` : ""}
+          </WithTooltip>,
           BackupRepo.isDefault(object) ? <Badge label="Default" className="success" /> : "",
           <KubeObjectAge object={object} key="age" />,
         ]}

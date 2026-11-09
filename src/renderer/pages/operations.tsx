@@ -4,7 +4,6 @@ import { getPhaseClass, getPhaseText } from "../components/status-conditions";
 import { OpsRequest, type OpsRequestApi } from "../k8s/kubeblocks/opsrequest-v1alpha1";
 import { getOpsTypeIcon } from "../utils";
 import styles from "./operations.module.scss";
-import stylesInline from "./operations.module.scss?inline";
 
 const {
   Component: { Badge, Button, Icon, KubeObjectListLayout, KubeObjectAge, NamespaceSelectBadge, TabLayout, WithTooltip },
@@ -30,8 +29,12 @@ const renderTableHeader = [
   { title: "Age", sortBy: "age" as const, className: styles.age },
 ];
 
-export const OperationsPage = observer(() => {
-  let store: any = null;
+export interface OperationsPageProps {
+  extension: Renderer.LensExtension;
+}
+
+export const OperationsPage = observer(({ extension }: OperationsPageProps) => {
+  let store: Renderer.K8sApi.KubeObjectStore<OpsRequest, OpsRequestApi> | null = null;
   try {
     store = OpsRequest.getStore<OpsRequest>();
   } catch (e) {
@@ -46,7 +49,7 @@ export const OperationsPage = observer(() => {
           <p style={{ color: "var(--textColorSecondary)", margin: "16px 0" }}>
             No OpsRequest resources found. Create an operation to get started.
           </p>
-          <Button primary onClick={() => (Renderer.Navigation as any).navigate("/extension/kubeblocks-create-operation")}>
+          <Button primary onClick={() => extension.navigate("kubeblocks-create-operation")}>
             <Icon material="add" /> Create Operation
           </Button>
         </div>
@@ -56,7 +59,6 @@ export const OperationsPage = observer(() => {
 
   return (
     <>
-      <style>{stylesInline}</style>
       <KubeObjectListLayout<OpsRequest, OpsRequestApi>
         tableId={`${OpsRequest.crd.plural}Table`}
         className={styles.page}
@@ -70,17 +72,18 @@ export const OperationsPage = observer(() => {
           <NamespaceSelectBadge key="namespace" namespace={object.getNs() ?? ""} />,
           <WithTooltip>{OpsRequest.getClusterName(object)}</WithTooltip>,
           <>
-            <Icon small material={getOpsTypeIcon(OpsRequest.getType(object))} />
-            {" "}
-            {OpsRequest.getType(object)}
+            <Icon small material={getOpsTypeIcon(OpsRequest.getType(object))} /> {OpsRequest.getType(object)}
           </>,
-          <Badge label={getPhaseText(OpsRequest.getPhase(object))} className={getPhaseClass(OpsRequest.getPhase(object))} />,
+          <Badge
+            label={getPhaseText(OpsRequest.getPhase(object))}
+            className={getPhaseClass(OpsRequest.getPhase(object))}
+          />,
           <WithTooltip>{OpsRequest.getProgress(object)}</WithTooltip>,
           <KubeObjectAge object={object} key="age" />,
         ]}
         addRemoveButtons={{
           addTooltip: "Create Operation",
-          onAdd: () => (Renderer.Navigation as any).navigate("/extension/kubeblocks-create-operation"),
+          onAdd: () => extension.navigate("kubeblocks-create-operation"),
         }}
       />
     </>

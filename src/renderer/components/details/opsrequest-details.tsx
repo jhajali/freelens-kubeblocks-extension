@@ -6,7 +6,6 @@ import { defaultYamlDumpOptions, getHeight, getOpsTypeIcon } from "../../utils";
 import { DurationAbsoluteTimestamp } from "../duration-absolute";
 import { getPhaseClass, getPhaseText } from "../status-conditions";
 import styles from "./opsrequest-details.module.scss";
-import stylesInline from "./opsrequest-details.module.scss?inline";
 
 const {
   Component: { Badge, DrawerItem, DrawerTitle, Icon, MonacoEditor },
@@ -19,14 +18,16 @@ export const OpsRequestDetails: React.FC<Renderer.Component.KubeObjectDetailsPro
 
   return (
     <>
-      <style>{stylesInline}</style>
       <div className={styles.details}>
         <DrawerItem name="Cluster">{OpsRequest.getClusterName(object)}</DrawerItem>
         <DrawerItem name="Type">
           <Icon small material={getOpsTypeIcon(opsType)} /> {opsType}
         </DrawerItem>
         <DrawerItem name="Phase">
-          <Badge label={getPhaseText(OpsRequest.getPhase(object))} className={getPhaseClass(OpsRequest.getPhase(object))} />
+          <Badge
+            label={getPhaseText(OpsRequest.getPhase(object))}
+            className={getPhaseClass(OpsRequest.getPhase(object))}
+          />
         </DrawerItem>
         <DrawerItem name="Progress" hidden={!OpsRequest.getProgress(object)}>
           {OpsRequest.getProgress(object)}
@@ -46,8 +47,12 @@ export const OpsRequestDetails: React.FC<Renderer.Component.KubeObjectDetailsPro
               <div key={`condition-${i}`}>
                 <DrawerItem name="Type">{condition.type}</DrawerItem>
                 <DrawerItem name="Status">{condition.status}</DrawerItem>
-                <DrawerItem name="Reason" hidden={!condition.reason}>{condition.reason}</DrawerItem>
-                <DrawerItem name="Message" hidden={!condition.message}>{condition.message}</DrawerItem>
+                <DrawerItem name="Reason" hidden={!condition.reason}>
+                  {condition.reason}
+                </DrawerItem>
+                <DrawerItem name="Message" hidden={!condition.message}>
+                  {condition.message}
+                </DrawerItem>
               </div>
             ))}
           </div>

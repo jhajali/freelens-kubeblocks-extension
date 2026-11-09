@@ -1,6 +1,5 @@
 declare const classNames: {
   readonly listPage: "listPage";
-  readonly tableCell: "tableCell";
   readonly provider: "provider";
   readonly phase: "phase";
   readonly access: "access";

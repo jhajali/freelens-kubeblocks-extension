@@ -1,10 +1,9 @@
 import { Renderer } from "@freelensapp/extensions";
 import { observer } from "mobx-react";
-import { withErrorPage } from "../components/error-page";
 import { getPhaseClass, getPhaseText } from "../components/status-conditions";
+import { whenStoreAvailable } from "../components/store-available";
 import { Cluster, type ClusterApi } from "../k8s/kubeblocks/cluster-v1";
 import styles from "./clusters.module.scss";
-import stylesInline from "./clusters.module.scss?inline";
 
 const {
   Component: { Badge, KubeObjectListLayout, KubeObjectAge, NamespaceSelectBadge, WithTooltip },
@@ -29,12 +28,11 @@ const renderTableHeader = [
 ];
 
 export const ClustersPage = observer(() =>
-  withErrorPage(() => {
+  whenStoreAvailable(() => {
     const store = Cluster.getStore<Cluster>();
 
     return (
       <>
-        <style>{stylesInline}</style>
         <KubeObjectListLayout<Cluster, ClusterApi>
           tableId={`${Cluster.crd.plural}Table`}
           className={styles.page}
@@ -48,7 +46,10 @@ export const ClustersPage = observer(() =>
             <NamespaceSelectBadge key="namespace" namespace={object.getNs() ?? ""} />,
             <WithTooltip>{Cluster.getDefinition(object)}</WithTooltip>,
             Cluster.getComponentCount(object),
-            <Badge label={getPhaseText(Cluster.getPhase(object))} className={getPhaseClass(Cluster.getPhase(object))} />,
+            <Badge
+              label={getPhaseText(Cluster.getPhase(object))}
+              className={getPhaseClass(Cluster.getPhase(object))}
+            />,
             <KubeObjectAge object={object} key="age" />,
           ]}
         />

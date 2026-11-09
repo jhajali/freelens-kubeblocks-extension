@@ -1,4 +1,5 @@
 import { Renderer } from "@freelensapp/extensions";
+
 import type {
   KubeBlocksKubeObjectCRD,
   KubeBlocksKubeObjectStatus,
@@ -36,6 +37,9 @@ export class OpsRequest extends Renderer.K8sApi.LensExtensionKubeObject<
   OpsRequestStatus,
   OpsRequestSpec
 > {
+  declare kind: "OpsRequest";
+  declare apiVersion: "operations.kubeblocks.io/v1alpha1";
+
   static readonly kind = "OpsRequest";
   static readonly namespaced = true;
   static readonly apiBase = "/apis/operations.kubeblocks.io/v1alpha1/opsrequests";
@@ -74,4 +78,4 @@ export class OpsRequest extends Renderer.K8sApi.LensExtensionKubeObject<
 }
 
 export class OpsRequestApi extends Renderer.K8sApi.KubeApi<OpsRequest> {}
-export class OpsRequestStore extends Renderer.K8sApi.KubeObjectStore<OpsRequest> {}
+export class OpsRequestStore extends Renderer.K8sApi.KubeObjectStore<OpsRequest, OpsRequestApi> {}

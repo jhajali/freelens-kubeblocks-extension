@@ -1,4 +1,5 @@
 import { Renderer } from "@freelensapp/extensions";
+
 import type { KubeBlocksKubeObjectCRD, KubeBlocksKubeObjectStatus } from "./types";
 
 export interface StorageProviderSpec {
@@ -23,6 +24,9 @@ export class StorageProvider extends Renderer.K8sApi.LensExtensionKubeObject<
   StorageProviderStatus,
   StorageProviderSpec
 > {
+  declare kind: "StorageProvider";
+  declare apiVersion: "dataprotection.kubeblocks.io/v1alpha1";
+
   static readonly kind = "StorageProvider";
   static readonly namespaced = false;
   static readonly apiBase = "/apis/dataprotection.kubeblocks.io/v1alpha1/storageproviders";
@@ -51,4 +55,4 @@ export class StorageProvider extends Renderer.K8sApi.LensExtensionKubeObject<
 }
 
 export class StorageProviderApi extends Renderer.K8sApi.KubeApi<StorageProvider> {}
-export class StorageProviderStore extends Renderer.K8sApi.KubeObjectStore<StorageProvider> {}
+export class StorageProviderStore extends Renderer.K8sApi.KubeObjectStore<StorageProvider, StorageProviderApi> {}

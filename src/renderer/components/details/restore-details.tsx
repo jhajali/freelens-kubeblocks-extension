@@ -6,7 +6,6 @@ import { defaultYamlDumpOptions, getHeight } from "../../utils";
 import { DurationAbsoluteTimestamp } from "../duration-absolute";
 import { getPhaseClass, getPhaseText } from "../status-conditions";
 import styles from "./restore-details.module.scss";
-import stylesInline from "./restore-details.module.scss?inline";
 
 const {
   Component: { Badge, DrawerItem, DrawerTitle, MonacoEditor },
@@ -18,7 +17,6 @@ export const RestoreDetails: React.FC<Renderer.Component.KubeObjectDetailsProps<
 
   return (
     <>
-      <style>{stylesInline}</style>
       <div className={styles.details}>
         <DrawerItem name="Backup Source">{Restore.getBackupName(object)}</DrawerItem>
         <DrawerItem name="Target Cluster">{Restore.getTargetCluster(object)}</DrawerItem>

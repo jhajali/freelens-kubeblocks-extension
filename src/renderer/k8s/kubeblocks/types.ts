@@ -1,5 +1,6 @@
 import { Renderer } from "@freelensapp/extensions";
-import type { Condition } from "@freelensapp/kube-object";
+
+type Condition = Renderer.K8sApi.Condition;
 
 export interface KubeBlocksKubeObjectCRD extends Renderer.K8sApi.LensExtensionKubeObjectCRD {
   title: string;

@@ -1,10 +1,9 @@
 import { Renderer } from "@freelensapp/extensions";
 import { observer } from "mobx-react";
-import { withErrorPage } from "../components/error-page";
 import { getPhaseClass, getPhaseText } from "../components/status-conditions";
+import { whenStoreAvailable } from "../components/store-available";
 import { Backup, type BackupApi } from "../k8s/kubeblocks/backup-v1alpha1";
 import styles from "./backups.module.scss";
-import stylesInline from "./backups.module.scss?inline";
 
 const {
   Component: { Badge, KubeObjectListLayout, KubeObjectAge, NamespaceSelectBadge, WithTooltip },
@@ -33,12 +32,11 @@ const renderTableHeader = [
 ];
 
 export const BackupsPage = observer(() =>
-  withErrorPage(() => {
+  whenStoreAvailable(() => {
     const store = Backup.getStore<Backup>();
 
     return (
       <>
-        <style>{stylesInline}</style>
         <KubeObjectListLayout<Backup, BackupApi>
           tableId={`${Backup.crd.plural}Table`}
           className={styles.page}

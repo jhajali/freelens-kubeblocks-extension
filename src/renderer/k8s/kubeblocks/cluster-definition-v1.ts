@@ -1,4 +1,5 @@
 import { Renderer } from "@freelensapp/extensions";
+
 import type { KubeBlocksKubeObjectCRD, KubeBlocksKubeObjectStatus } from "./types";
 
 export interface ClusterDefinitionSpec {
@@ -15,6 +16,9 @@ export class ClusterDefinition extends Renderer.K8sApi.LensExtensionKubeObject<
   ClusterDefinitionStatus,
   ClusterDefinitionSpec
 > {
+  declare kind: "ClusterDefinition";
+  declare apiVersion: "apps.kubeblocks.io/v1" | "apps.kubeblocks.io/v1alpha1";
+
   static readonly kind = "ClusterDefinition";
   static readonly namespaced = false;
   static readonly apiBase = "/apis/apps.kubeblocks.io/v1/clusterdefinitions";
@@ -41,4 +45,4 @@ export class ClusterDefinition extends Renderer.K8sApi.LensExtensionKubeObject<
 }
 
 export class ClusterDefinitionApi extends Renderer.K8sApi.KubeApi<ClusterDefinition> {}
-export class ClusterDefinitionStore extends Renderer.K8sApi.KubeObjectStore<ClusterDefinition> {}
+export class ClusterDefinitionStore extends Renderer.K8sApi.KubeObjectStore<ClusterDefinition, ClusterDefinitionApi> {}
