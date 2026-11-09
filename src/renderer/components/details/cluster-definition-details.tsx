@@ -4,21 +4,19 @@ import { observer } from "mobx-react";
 import { ClusterDefinition } from "../../k8s/kubeblocks/cluster-definition-v1";
 import { defaultYamlDumpOptions, getHeight } from "../../utils";
 import styles from "./cluster-definition-details.module.scss";
-import stylesInline from "./cluster-definition-details.module.scss?inline";
 
 const {
   Component: { DrawerItem, DrawerTitle, MonacoEditor },
 } = Renderer;
 
-export const ClusterDefinitionDetails: React.FC<Renderer.Component.KubeObjectDetailsProps<ClusterDefinition>> = observer(
-  (props) => {
+export const ClusterDefinitionDetails: React.FC<Renderer.Component.KubeObjectDetailsProps<ClusterDefinition>> =
+  observer((props) => {
     const { object } = props;
     const specYaml = yaml.dump(object.spec ?? {}, defaultYamlDumpOptions);
     const topologies = ClusterDefinition.getTopologies(object);
 
     return (
       <>
-        <style>{stylesInline}</style>
         <div className={styles.details}>
           <DrawerItem name="Provider">{ClusterDefinition.getProvider(object)}</DrawerItem>
           <DrawerItem name="Description" hidden={!ClusterDefinition.getDescription(object)}>
@@ -40,5 +38,4 @@ export const ClusterDefinitionDetails: React.FC<Renderer.Component.KubeObjectDet
         </div>
       </>
     );
-  },
-);
+  });

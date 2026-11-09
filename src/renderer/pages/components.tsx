@@ -1,10 +1,9 @@
 import { Renderer } from "@freelensapp/extensions";
 import { observer } from "mobx-react";
-import { withErrorPage } from "../components/error-page";
 import { getPhaseClass, getPhaseText } from "../components/status-conditions";
+import { whenStoreAvailable } from "../components/store-available";
 import { Component, type ComponentApi } from "../k8s/kubeblocks/component-v1";
 import styles from "./components.module.scss";
-import stylesInline from "./components.module.scss?inline";
 
 const {
   Component: { Badge, KubeObjectListLayout, KubeObjectAge, NamespaceSelectBadge, WithTooltip },
@@ -31,12 +30,11 @@ const renderTableHeader = [
 ];
 
 export const ComponentsPage = observer(() =>
-  withErrorPage(() => {
+  whenStoreAvailable(() => {
     const store = Component.getStore<Component>();
 
     return (
       <>
-        <style>{stylesInline}</style>
         <KubeObjectListLayout<Component, ComponentApi>
           tableId={`${Component.crd.plural}Table`}
           className={styles.page}
@@ -51,7 +49,10 @@ export const ComponentsPage = observer(() =>
             <WithTooltip>{Component.getClusterName(object)}</WithTooltip>,
             <WithTooltip>{Component.getDefinition(object)}</WithTooltip>,
             Component.getReplicas(object),
-            <Badge label={getPhaseText(Component.getPhase(object))} className={getPhaseClass(Component.getPhase(object))} />,
+            <Badge
+              label={getPhaseText(Component.getPhase(object))}
+              className={getPhaseClass(Component.getPhase(object))}
+            />,
             <KubeObjectAge object={object} key="age" />,
           ]}
         />

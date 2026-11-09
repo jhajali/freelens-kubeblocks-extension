@@ -1,15 +1,14 @@
 import { Common, Renderer } from "@freelensapp/extensions";
-import { computed, makeObservable, observable } from "mobx";
+import { observable } from "mobx";
 import { observer } from "mobx-react";
-import moment from "moment";
-import React from "react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
 
 const {
   Component: {
     KubeObjectListLayout,
     Icon,
     KubeObjectAge,
+    MaybeLink,
     NamespaceSelectBadge,
     WithTooltip,
     TabLayout,
@@ -43,92 +42,76 @@ enum columnId {
   lastSeen = "last-seen",
 }
 
+const sortingCallbacks = {
+  [columnId.namespace]: (event: Renderer.K8sApi.KubeEvent) => event.getNs(),
+  [columnId.type]: (event: Renderer.K8sApi.KubeEvent) => event.type,
+  [columnId.object]: (event: Renderer.K8sApi.KubeEvent) => event.involvedObject.name,
+  [columnId.count]: (event: Renderer.K8sApi.KubeEvent) => event.count,
+  [columnId.age]: (event: Renderer.K8sApi.KubeEvent) => -event.getCreationTimestamp(),
+  [columnId.lastSeen]: (event: Renderer.K8sApi.KubeEvent) =>
+    event.lastTimestamp ? -new Date(event.lastTimestamp).getTime() : 0,
+};
+
+type SortableColumn = keyof typeof sortingCallbacks;
+
 export interface KubeBlocksEventsProps {
   className?: string;
   compact?: boolean;
   compactLimit?: number;
 }
 
-@observer
-export class KubeBlocksEvents extends React.Component<KubeBlocksEventsProps> {
-  readonly sorting = observable.object({
-    sortBy: columnId.age,
-    orderBy: "asc" as "asc" | "desc",
-  });
+// A function component rather than an @observer class: under mobx-react 10 a class may read this.props only in
+// render(), and the host calls getItems and customizeHeader from its own derivations.
+export const KubeBlocksEvents = observer(
+  ({ compact, compactLimit, className, ...layoutProps }: KubeBlocksEventsProps) => {
+    const [sorting] = useState(() =>
+      observable.object({
+        sortBy: columnId.age as SortableColumn,
+        orderBy: "asc" as "asc" | "desc",
+      }),
+    );
 
-  private sortingCallbacks = {
-    [columnId.namespace]: (event: Renderer.K8sApi.KubeEvent) => event.getNs(),
-    [columnId.type]: (event: Renderer.K8sApi.KubeEvent) => event.type,
-    [columnId.object]: (event: Renderer.K8sApi.KubeEvent) => event.involvedObject.name,
-    [columnId.count]: (event: Renderer.K8sApi.KubeEvent) => event.count,
-    [columnId.age]: (event: Renderer.K8sApi.KubeEvent) => -event.getCreationTimestamp(),
-    [columnId.lastSeen]: (event: Renderer.K8sApi.KubeEvent) =>
-      event.lastTimestamp ? -new Date(event.lastTimestamp).getTime() : 0,
-  };
-
-  constructor(props: KubeBlocksEventsProps) {
-    super(props);
-    makeObservable(this);
-  }
-
-  @computed get items(): Renderer.K8sApi.KubeEvent[] {
-    const items = eventStore.contextItems.filter(isKubeBlocksEvent);
-    const { sortBy, orderBy } = this.sorting;
-
-    return [...items].sort((a, b) => {
-      const valA = this.sortingCallbacks[sortBy](a);
-      const valB = this.sortingCallbacks[sortBy](b);
+    const items = eventStore.contextItems.filter(isKubeBlocksEvent).sort((a, b) => {
+      const valA = sortingCallbacks[sorting.sortBy](a) ?? "";
+      const valB = sortingCallbacks[sorting.sortBy](b) ?? "";
       if (valA === valB) return 0;
       const compare = valA > valB ? 1 : -1;
-      return orderBy === "asc" ? compare : -compare;
+      return sorting.orderBy === "asc" ? compare : -compare;
     });
-  }
+    const visibleItems = compact ? items.slice(0, compactLimit) : items;
 
-  @computed get visibleItems(): Renderer.K8sApi.KubeEvent[] {
-    const { compact, compactLimit } = this.props;
-    if (compact) {
-      return this.items.slice(0, compactLimit);
-    }
-    return this.items;
-  }
+    const customizeHeader: Renderer.Component.HeaderCustomizer = ({ info, title, ...headerPlaceholders }) => {
+      const allEventsAreShown = visibleItems.length === items.length;
 
-  customizeHeader = ({ info, title, ...headerPlaceholders }: any) => {
-    const { compact } = this.props;
-    const { items, visibleItems } = this;
-    const allEventsAreShown = visibleItems.length === items.length;
-
-    if (compact) {
-      if (allEventsAreShown) {
-        return { title };
+      if (compact) {
+        if (allEventsAreShown) {
+          return { title };
+        }
+        return {
+          title,
+          info: (
+            <span>
+              {"("}
+              {visibleItems.length}
+              {" of "}
+              {items.length}
+              {")"}
+            </span>
+          ),
+        };
       }
+
       return {
-        title,
         info: (
-          <span>
-            {"("}
-            {visibleItems.length}
-            {" of "}
-            {items.length}
-            {")"}
-          </span>
+          <>
+            {info}
+            <Icon small material="help_outline" className="help-icon" tooltip={`Limited to ${eventStore.limit}`} />
+          </>
         ),
+        title,
+        ...headerPlaceholders,
       };
-    }
-
-    return {
-      info: (
-        <>
-          {info}
-          <Icon small material="help_outline" className="help-icon" tooltip={`Limited to ${eventStore.limit}`} />
-        </>
-      ),
-      title,
-      ...headerPlaceholders,
     };
-  };
-
-  render() {
-    const { compact, className, ...layoutProps } = this.props;
 
     const events = (
       <KubeObjectListLayout
@@ -138,16 +121,16 @@ export class KubeBlocksEvents extends React.Component<KubeBlocksEventsProps> {
         store={eventStore}
         className={cssNames("Events", className, { compact })}
         renderHeaderTitle="KubeBlocks Events"
-        customizeHeader={this.customizeHeader}
+        customizeHeader={customizeHeader}
         isSelectable={false}
-        getItems={() => this.visibleItems}
+        getItems={() => visibleItems}
         virtual={!compact}
         tableProps={{
           sortSyncWithUrl: false,
-          sortByDefault: this.sorting,
-          onSort: (params) => Object.assign(this.sorting, params),
+          sortByDefault: sorting,
+          onSort: (params) => Object.assign(sorting, params),
         }}
-        sortingCallbacks={this.sortingCallbacks}
+        sortingCallbacks={sortingCallbacks}
         searchFilters={[
           (event) => event.getSearchFields(),
           (event) => event.message,
@@ -175,17 +158,17 @@ export class KubeBlocksEvents extends React.Component<KubeBlocksEventsProps> {
               title: <WithTooltip>{message}</WithTooltip>,
             },
             <NamespaceSelectBadge key="namespace" namespace={event.getNs()} />,
-            <Link
+            <MaybeLink
               key="link"
               to={getDetailsUrl(apiManager.lookupApiLink(involvedObject, event))}
               onClick={stopPropagation}
             >
               <WithTooltip>{`${involvedObject.kind}: ${involvedObject.name}`}</WithTooltip>
-            </Link>,
+            </MaybeLink>,
             <WithTooltip>{event.getSource()}</WithTooltip>,
             event.count,
             <KubeObjectAge key="age" object={event} />,
-            <WithTooltip tooltip={event.lastTimestamp ? moment(event.lastTimestamp).toDate() : undefined}>
+            <WithTooltip tooltip={event.lastTimestamp ? new Date(event.lastTimestamp) : undefined}>
               <ReactiveDuration key="last-seen" timestamp={event.lastTimestamp} />
             </WithTooltip>,
           ];
@@ -198,5 +181,5 @@ export class KubeBlocksEvents extends React.Component<KubeBlocksEventsProps> {
     }
 
     return <TabLayout>{events}</TabLayout>;
-  }
-}
+  },
+);

@@ -1,17 +1,17 @@
 import { Renderer } from "@freelensapp/extensions";
 import yaml from "js-yaml";
 import { observer } from "mobx-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { InfoPage } from "../components/info-page";
 import { getPhaseClass } from "../components/status-conditions";
 import { BackupPolicy } from "../k8s/kubeblocks/backup-policy-v1alpha1";
 import { Backup } from "../k8s/kubeblocks/backup-v1alpha1";
 import { Cluster } from "../k8s/kubeblocks/cluster-v1";
 import { ComponentVersion } from "../k8s/kubeblocks/component-version-v1";
-import type { ClusterComponentSpec, OpsRequestType } from "../k8s/kubeblocks/types";
 import { defaultYamlDumpOptions, getHeight } from "../utils";
 import styles from "./create-operation.module.scss";
-import stylesInline from "./create-operation.module.scss?inline";
+
+import type { ClusterComponentSpec, OpsRequestType } from "../k8s/kubeblocks/types";
 
 const {
   Component: { Badge, Button, Icon, MonacoEditor, TabLayout },
@@ -64,16 +64,20 @@ function buildManifest(
       manifest.spec.horizontalScaling = [{ componentName, replicas: parseInt(replicas) || 1 }];
       break;
     case "VerticalScaling":
-      manifest.spec.verticalScaling = [{
-        componentName,
-        resources: { requests: { cpu, memory }, limits: { cpu, memory } },
-      }];
+      manifest.spec.verticalScaling = [
+        {
+          componentName,
+          resources: { requests: { cpu, memory }, limits: { cpu, memory } },
+        },
+      ];
       break;
     case "VolumeExpansion":
-      manifest.spec.volumeExpansion = [{
-        componentName,
-        volumeClaimTemplates: [{ name: "data", storage }],
-      }];
+      manifest.spec.volumeExpansion = [
+        {
+          componentName,
+          volumeClaimTemplates: [{ name: "data", storage }],
+        },
+      ];
       break;
     case "Upgrade":
       manifest.spec.upgrade = { components: [{ componentName, serviceVersion }] };
@@ -189,15 +193,16 @@ export const CreateOperationPage = observer(() => {
   const [reviewYaml, setReviewYaml] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
-  const watches = useRef<(() => void)[]>([]);
-  const abortController = useRef(new AbortController());
 
   useEffect(() => {
     let isMounted = true;
+    // Created per run: React.StrictMode runs the effect twice, and the first cleanup aborts its own controller only.
+    const watches: (() => void)[] = [];
+    const abortController = new AbortController();
     (async () => {
       const namespaceStore = Renderer.K8sApi.namespaceStore;
-      await namespaceStore.loadAll({ namespaces: [], reqInit: { signal: abortController.current.signal } });
-      watches.current.push(namespaceStore.subscribe());
+      await namespaceStore.loadAll({ namespaces: [], reqInit: { signal: abortController.signal } });
+      if (!abortController.signal.aborted) watches.push(namespaceStore.subscribe());
       const namespaces = namespaceStore.items.map((ns) => ns.getName());
 
       for (const object of [Cluster, ComponentVersion, BackupPolicy, Backup]) {
@@ -205,11 +210,11 @@ export const CreateOperationPage = observer(() => {
           const store = object.getStore();
           if (!store) continue;
           if (object.namespaced) {
-            await store.loadAll({ namespaces, reqInit: { signal: abortController.current.signal } });
+            await store.loadAll({ namespaces, reqInit: { signal: abortController.signal } });
           } else {
-            await store.loadAll({ reqInit: { signal: abortController.current.signal } });
+            await store.loadAll({ reqInit: { signal: abortController.signal } });
           }
-          watches.current.push(store.subscribe());
+          if (!abortController.signal.aborted) watches.push(store.subscribe());
         } catch (_) {
           continue;
         }
@@ -220,9 +225,8 @@ export const CreateOperationPage = observer(() => {
 
     return () => {
       isMounted = false;
-      abortController.current.abort();
-      watches.current.forEach((w) => w());
-      watches.current = [];
+      abortController.abort();
+      watches.forEach((w) => w());
     };
   }, []);
 
@@ -249,11 +253,23 @@ export const CreateOperationPage = observer(() => {
 
   const goToReview = () => {
     if (opsType) {
-      setReviewYaml(buildManifest(
-        clusterName, namespace, opsType, componentName, replicas,
-        cpu, memory, storage, serviceVersion, backupMethod, backupName,
-        serviceType, instanceName,
-      ));
+      setReviewYaml(
+        buildManifest(
+          clusterName,
+          namespace,
+          opsType,
+          componentName,
+          replicas,
+          cpu,
+          memory,
+          storage,
+          serviceVersion,
+          backupMethod,
+          backupName,
+          serviceType,
+          instanceName,
+        ),
+      );
       setStep("review");
     }
   };
@@ -293,13 +309,21 @@ export const CreateOperationPage = observer(() => {
     </div>
   );
 
-  const renderSelect = (label: string, value: string, onChange: (v: string) => void, options: { value: string; label: string }[], placeholder: string) => (
+  const renderSelect = (
+    label: string,
+    value: string,
+    onChange: (v: string) => void,
+    options: { value: string; label: string }[],
+    placeholder: string,
+  ) => (
     <div className={styles.field}>
       <label>{label}</label>
       <select value={value} onChange={(e) => onChange(e.target.value)}>
         <option value="">{placeholder}</option>
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
         ))}
       </select>
     </div>
@@ -319,11 +343,27 @@ export const CreateOperationPage = observer(() => {
   const renderConfigFields = () => {
     switch (opsType) {
       case "HorizontalScaling":
-        return <>{componentSelect}{renderField("Replicas", replicas, setReplicas, "e.g. 3")}</>;
+        return (
+          <>
+            {componentSelect}
+            {renderField("Replicas", replicas, setReplicas, "e.g. 3")}
+          </>
+        );
       case "VerticalScaling":
-        return <>{componentSelect}{renderField("CPU", cpu, setCpu, "e.g. 500m")}{renderField("Memory", memory, setMemory, "e.g. 1Gi")}</>;
+        return (
+          <>
+            {componentSelect}
+            {renderField("CPU", cpu, setCpu, "e.g. 500m")}
+            {renderField("Memory", memory, setMemory, "e.g. 1Gi")}
+          </>
+        );
       case "VolumeExpansion":
-        return <>{componentSelect}{renderField("Storage", storage, setStorage, "e.g. 20Gi")}</>;
+        return (
+          <>
+            {componentSelect}
+            {renderField("Storage", storage, setStorage, "e.g. 20Gi")}
+          </>
+        );
       case "Upgrade":
         return (
           <>
@@ -360,15 +400,26 @@ export const CreateOperationPage = observer(() => {
         return (
           <>
             {componentSelect}
-            {renderSelect("Service Type", serviceType, setServiceType, [
-              { value: "ClusterIP", label: "ClusterIP" },
-              { value: "NodePort", label: "NodePort" },
-              { value: "LoadBalancer", label: "LoadBalancer" },
-            ], "-- Select Type --")}
+            {renderSelect(
+              "Service Type",
+              serviceType,
+              setServiceType,
+              [
+                { value: "ClusterIP", label: "ClusterIP" },
+                { value: "NodePort", label: "NodePort" },
+                { value: "LoadBalancer", label: "LoadBalancer" },
+              ],
+              "-- Select Type --",
+            )}
           </>
         );
       case "Switchover":
-        return <>{componentSelect}{renderField("Instance Name", instanceName, setInstanceName, "e.g. mysql-0")}</>;
+        return (
+          <>
+            {componentSelect}
+            {renderField("Instance Name", instanceName, setInstanceName, "e.g. mysql-0")}
+          </>
+        );
       default:
         return <p>No additional configuration needed.</p>;
     }
@@ -376,7 +427,6 @@ export const CreateOperationPage = observer(() => {
 
   return (
     <>
-      <style>{stylesInline}</style>
       <TabLayout>
         <div className={styles.page}>
           <header>
@@ -384,7 +434,9 @@ export const CreateOperationPage = observer(() => {
           </header>
 
           <div className={styles.stepIndicator}>
-            <span className={step === "cluster" ? styles.active : clusterName ? styles.done : ""}>1. Select Cluster</span>
+            <span className={step === "cluster" ? styles.active : clusterName ? styles.done : ""}>
+              1. Select Cluster
+            </span>
             <span className={step === "type" ? styles.active : opsType ? styles.done : ""}>2. Operation Type</span>
             <span className={step === "config" ? styles.active : ""}>3. Configure</span>
             <span className={step === "review" ? styles.active : ""}>4. Review & Submit</span>
@@ -417,14 +469,18 @@ export const CreateOperationPage = observer(() => {
                   </div>
                 )}
                 <div className={styles.actions}>
-                  <Button primary disabled={!clusterName} onClick={() => setStep("type")}>Next</Button>
+                  <Button primary disabled={!clusterName} onClick={() => setStep("type")}>
+                    Next
+                  </Button>
                 </div>
               </div>
             )}
 
             {step === "type" && (
               <div className={styles.section}>
-                <h6>Select operation for <strong>{clusterName}</strong></h6>
+                <h6>
+                  Select operation for <strong>{clusterName}</strong>
+                </h6>
                 <div className={styles.opsGrid}>
                   {OPS_TYPES.map((op) => (
                     <div
@@ -439,19 +495,29 @@ export const CreateOperationPage = observer(() => {
                   ))}
                 </div>
                 <div className={styles.actions}>
-                  <Button plain onClick={() => setStep("cluster")}>Back</Button>
-                  <Button primary disabled={!opsType} onClick={() => setStep("config")}>Next</Button>
+                  <Button plain onClick={() => setStep("cluster")}>
+                    Back
+                  </Button>
+                  <Button primary disabled={!opsType} onClick={() => setStep("config")}>
+                    Next
+                  </Button>
                 </div>
               </div>
             )}
 
             {step === "config" && (
               <div className={styles.section}>
-                <h6>Configure {opsType} for <strong>{clusterName}</strong></h6>
+                <h6>
+                  Configure {opsType} for <strong>{clusterName}</strong>
+                </h6>
                 {renderConfigFields()}
                 <div className={styles.actions}>
-                  <Button plain onClick={() => setStep("type")}>Back</Button>
-                  <Button primary onClick={goToReview}>Review</Button>
+                  <Button plain onClick={() => setStep("type")}>
+                    Back
+                  </Button>
+                  <Button primary onClick={goToReview}>
+                    Review
+                  </Button>
                 </div>
               </div>
             )}
@@ -467,11 +533,11 @@ export const CreateOperationPage = observer(() => {
                   onChange={(v) => setReviewYaml(v)}
                   options={{ scrollbar: { alwaysConsumeMouseWheel: false } }}
                 />
-                {result && (
-                  <p className={result.ok ? styles.success : styles.error}>{result.message}</p>
-                )}
+                {result && <p className={result.ok ? styles.success : styles.error}>{result.message}</p>}
                 <div className={styles.actions}>
-                  <Button plain onClick={() => setStep("config")}>Back</Button>
+                  <Button plain onClick={() => setStep("config")}>
+                    Back
+                  </Button>
                   <Button primary onClick={doSubmit} disabled={submitting || !reviewYaml}>
                     {submitting ? "Submitting..." : "Submit"}
                   </Button>

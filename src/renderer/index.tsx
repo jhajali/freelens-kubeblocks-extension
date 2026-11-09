@@ -1,12 +1,20 @@
 import { Renderer } from "@freelensapp/extensions";
 import { BackupDetails } from "./components/details/backup-details";
-import { ClusterDetails } from "./components/details/cluster-details";
 import { ClusterDefinitionDetails } from "./components/details/cluster-definition-details";
-import { ComponentDetails } from "./components/details/component-details";
+import { ClusterDetails } from "./components/details/cluster-details";
 import { ComponentDefinitionDetails } from "./components/details/component-definition-details";
+import { ComponentDetails } from "./components/details/component-details";
 import { OpsRequestDetails } from "./components/details/opsrequest-details";
 import { RestoreDetails } from "./components/details/restore-details";
+import {
+  withDetailsErrorBoundary,
+  withMenuItemErrorBoundary,
+  withPageErrorBoundary,
+} from "./components/error-boundary";
 import svgIcon from "./icons/kubeblocks.svg?raw";
+import { BackupPolicy } from "./k8s/kubeblocks/backup-policy-v1alpha1";
+import { BackupRepo } from "./k8s/kubeblocks/backup-repo-v1alpha1";
+import { BackupSchedule } from "./k8s/kubeblocks/backup-schedule-v1alpha1";
 import { Backup } from "./k8s/kubeblocks/backup-v1alpha1";
 import { ClusterDefinition } from "./k8s/kubeblocks/cluster-definition-v1";
 import { Cluster } from "./k8s/kubeblocks/cluster-v1";
@@ -14,12 +22,7 @@ import { ComponentDefinition } from "./k8s/kubeblocks/component-definition-v1";
 import { Component } from "./k8s/kubeblocks/component-v1";
 import { OpsRequest } from "./k8s/kubeblocks/opsrequest-v1alpha1";
 import { Restore } from "./k8s/kubeblocks/restore-v1alpha1";
-import {
-  type ClusterOpsMenuItemProps,
-  RestartClusterMenuItem,
-  StartClusterMenuItem,
-  StopClusterMenuItem,
-} from "./menus/cluster-ops-menu-items";
+import { RestartClusterMenuItem, StartClusterMenuItem, StopClusterMenuItem } from "./menus/cluster-ops-menu-items";
 import { BackupLocationsPage } from "./pages/backup-locations";
 import { BackupPoliciesPage } from "./pages/backup-policies";
 import { BackupSchedulesPage } from "./pages/backup-schedules";
@@ -40,8 +43,10 @@ export function KubeBlocksIcon(props: Renderer.Component.IconProps) {
   return <Icon {...props} svg={svgIcon} />;
 }
 
+// Every page, details panel and menu item renders inside an error boundary, so that an error it throws stays in its
+// place: the host has none around the details drawer or a menu item.
 export default class KubeBlocksExtension extends Renderer.LensExtension {
-  clusterPages = [
+  clusterPages: Renderer.LensExtension["clusterPages"] = [
     {
       id: "kubeblocks-dashboard",
       components: {
@@ -63,7 +68,7 @@ export default class KubeBlocksExtension extends Renderer.LensExtension {
     {
       id: "kubeblocks-operations",
       components: {
-        Page: () => <OperationsPage />,
+        Page: () => <OperationsPage extension={this} />,
       },
     },
     {
@@ -108,7 +113,7 @@ export default class KubeBlocksExtension extends Renderer.LensExtension {
         Page: () => <BackupSchedulesPage />,
       },
     },
-  ];
+  ].map((registration) => withPageErrorBoundary(this, registration));
 
   clusterPageMenus = [
     {
@@ -198,90 +203,33 @@ export default class KubeBlocksExtension extends Renderer.LensExtension {
     },
   ];
 
-  kubeObjectDetailItems = [
-    {
-      kind: Cluster.kind,
-      apiVersions: Cluster.crd.apiVersions,
-      priority: 10,
-      components: {
-        Details: (props: Renderer.Component.KubeObjectDetailsProps<Cluster>) => <ClusterDetails {...props} />,
-      },
-    },
-    {
-      kind: Component.kind,
-      apiVersions: Component.crd.apiVersions,
-      priority: 10,
-      components: {
-        Details: (props: Renderer.Component.KubeObjectDetailsProps<Component>) => <ComponentDetails {...props} />,
-      },
-    },
-    {
-      kind: OpsRequest.kind,
-      apiVersions: OpsRequest.crd.apiVersions,
-      priority: 10,
-      components: {
-        Details: (props: Renderer.Component.KubeObjectDetailsProps<OpsRequest>) => <OpsRequestDetails {...props} />,
-      },
-    },
-    {
-      kind: Backup.kind,
-      apiVersions: Backup.crd.apiVersions,
-      priority: 10,
-      components: {
-        Details: (props: Renderer.Component.KubeObjectDetailsProps<Backup>) => <BackupDetails {...props} />,
-      },
-    },
-    {
-      kind: Restore.kind,
-      apiVersions: Restore.crd.apiVersions,
-      priority: 10,
-      components: {
-        Details: (props: Renderer.Component.KubeObjectDetailsProps<Restore>) => <RestoreDetails {...props} />,
-      },
-    },
-    {
-      kind: ClusterDefinition.kind,
-      apiVersions: ClusterDefinition.crd.apiVersions,
-      priority: 10,
-      components: {
-        Details: (props: Renderer.Component.KubeObjectDetailsProps<ClusterDefinition>) => (
-          <ClusterDefinitionDetails {...props} />
-        ),
-      },
-    },
-    {
-      kind: ComponentDefinition.kind,
-      apiVersions: ComponentDefinition.crd.apiVersions,
-      priority: 10,
-      components: {
-        Details: (props: Renderer.Component.KubeObjectDetailsProps<ComponentDefinition>) => (
-          <ComponentDefinitionDetails {...props} />
-        ),
-      },
-    },
-  ];
+  kubeObjectDetailItems: Renderer.LensExtension["kubeObjectDetailItems"] = [
+    Renderer.K8sApi.detailsFor(Cluster, { priority: 10, Details: ClusterDetails }),
+    Renderer.K8sApi.detailsFor(Component, { priority: 10, Details: ComponentDetails }),
+    Renderer.K8sApi.detailsFor(OpsRequest, { priority: 10, Details: OpsRequestDetails }),
+    Renderer.K8sApi.detailsFor(Backup, { priority: 10, Details: BackupDetails }),
+    Renderer.K8sApi.detailsFor(Restore, { priority: 10, Details: RestoreDetails }),
+    Renderer.K8sApi.detailsFor(ClusterDefinition, { priority: 10, Details: ClusterDefinitionDetails }),
+    Renderer.K8sApi.detailsFor(ComponentDefinition, { priority: 10, Details: ComponentDefinitionDetails }),
+  ].map((registration) => withDetailsErrorBoundary(this, registration));
 
-  kubeObjectMenuItems = [
-    {
-      kind: Cluster.kind,
-      apiVersions: Cluster.crd.apiVersions,
-      components: {
-        MenuItem: (props: ClusterOpsMenuItemProps) => <RestartClusterMenuItem {...props} resource={Cluster} />,
-      },
-    },
-    {
-      kind: Cluster.kind,
-      apiVersions: Cluster.crd.apiVersions,
-      components: {
-        MenuItem: (props: ClusterOpsMenuItemProps) => <StopClusterMenuItem {...props} resource={Cluster} />,
-      },
-    },
-    {
-      kind: Cluster.kind,
-      apiVersions: Cluster.crd.apiVersions,
-      components: {
-        MenuItem: (props: ClusterOpsMenuItemProps) => <StartClusterMenuItem {...props} resource={Cluster} />,
-      },
-    },
+  kubeObjectMenuItems: Renderer.LensExtension["kubeObjectMenuItems"] = [
+    Renderer.K8sApi.menuItemFor(Cluster, { MenuItem: RestartClusterMenuItem }),
+    Renderer.K8sApi.menuItemFor(Cluster, { MenuItem: StopClusterMenuItem }),
+    Renderer.K8sApi.menuItemFor(Cluster, { MenuItem: StartClusterMenuItem }),
+  ].map((registration) => withMenuItemErrorBoundary(this, registration));
+
+  // The kinds with a sidebar entry of their own, so that the Custom Resources tree does not list them a second time.
+  customResources = [
+    Cluster,
+    Component,
+    OpsRequest,
+    Backup,
+    Restore,
+    ClusterDefinition,
+    ComponentDefinition,
+    BackupRepo,
+    BackupPolicy,
+    BackupSchedule,
   ];
 }

@@ -1,10 +1,9 @@
 import { Renderer } from "@freelensapp/extensions";
 import { observer } from "mobx-react";
-import { withErrorPage } from "../components/error-page";
 import { getPhaseClass, getPhaseText } from "../components/status-conditions";
+import { whenStoreAvailable } from "../components/store-available";
 import { BackupSchedule, type BackupScheduleApi } from "../k8s/kubeblocks/backup-schedule-v1alpha1";
 import styles from "./backup-schedules.module.scss";
-import stylesInline from "./backup-schedules.module.scss?inline";
 
 const {
   Component: { Badge, KubeObjectListLayout, KubeObjectAge, NamespaceSelectBadge, WithTooltip },
@@ -31,12 +30,11 @@ const renderTableHeader = [
 ];
 
 export const BackupSchedulesPage = observer(() =>
-  withErrorPage(() => {
+  whenStoreAvailable(() => {
     const store = BackupSchedule.getStore<BackupSchedule>();
 
     return (
       <>
-        <style>{stylesInline}</style>
         <KubeObjectListLayout<BackupSchedule, BackupScheduleApi>
           tableId="backupschedulesTable"
           className={styles.page}
@@ -50,7 +48,10 @@ export const BackupSchedulesPage = observer(() =>
             <NamespaceSelectBadge key="namespace" namespace={object.getNs() ?? ""} />,
             <WithTooltip>{BackupSchedule.getClusterName(object)}</WithTooltip>,
             <WithTooltip>{BackupSchedule.getPolicyName(object)}</WithTooltip>,
-            <Badge label={getPhaseText(BackupSchedule.getPhase(object))} className={getPhaseClass(BackupSchedule.getPhase(object))} />,
+            <Badge
+              label={getPhaseText(BackupSchedule.getPhase(object))}
+              className={getPhaseClass(BackupSchedule.getPhase(object))}
+            />,
             `${BackupSchedule.getEnabledCount(object)}/${BackupSchedule.getTotalCount(object)} enabled`,
             <KubeObjectAge object={object} key="age" />,
           ]}

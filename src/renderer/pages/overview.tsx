@@ -1,6 +1,6 @@
-import { Common, Renderer } from "@freelensapp/extensions";
+import { Renderer } from "@freelensapp/extensions";
 import { observer } from "mobx-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { InfoPage } from "../components/info-page";
 import { KubeBlocksEvents } from "../components/kubeblocks-events";
 import { ClusterPhasePieChart } from "../components/pie-chart";
@@ -10,27 +10,23 @@ import { Component } from "../k8s/kubeblocks/component-v1";
 import { OpsRequest } from "../k8s/kubeblocks/opsrequest-v1alpha1";
 import { Restore } from "../k8s/kubeblocks/restore-v1alpha1";
 import styles from "./overview.module.scss";
-import stylesInline from "./overview.module.scss?inline";
 
 const {
   Component: { NamespaceSelectFilter, TabLayout, Badge, WithTooltip, KubeObjectAge },
 } = Renderer;
 
-const {
-  Util: { cssNames },
-} = Common;
-
 export const KubeBlocksOverviewPage = observer(() => {
   const [loaded, setLoaded] = useState(false);
-  const watches = useRef<(() => void)[]>([]);
-  const abortController = useRef(new AbortController());
 
   useEffect(() => {
     let isMounted = true;
+    // Created per run: React.StrictMode runs the effect twice, and the first cleanup aborts its own controller only.
+    const watches: (() => void)[] = [];
+    const abortController = new AbortController();
     (async () => {
       const namespaceStore = Renderer.K8sApi.namespaceStore;
-      await namespaceStore.loadAll({ namespaces: [], reqInit: { signal: abortController.current.signal } });
-      watches.current.push(namespaceStore.subscribe());
+      await namespaceStore.loadAll({ namespaces: [], reqInit: { signal: abortController.signal } });
+      if (!abortController.signal.aborted) watches.push(namespaceStore.subscribe());
 
       const namespaces = namespaceStore.items.map((ns) => ns.getName());
 
@@ -38,8 +34,8 @@ export const KubeBlocksOverviewPage = observer(() => {
         try {
           const store = object.getStore();
           if (!store) continue;
-          await store.loadAll({ namespaces, reqInit: { signal: abortController.current.signal } });
-          watches.current.push(store.subscribe());
+          await store.loadAll({ namespaces, reqInit: { signal: abortController.signal } });
+          if (!abortController.signal.aborted) watches.push(store.subscribe());
         } catch (_) {
           continue;
         }
@@ -50,9 +46,8 @@ export const KubeBlocksOverviewPage = observer(() => {
 
     return () => {
       isMounted = false;
-      abortController.current.abort();
-      watches.current.forEach((w) => w());
-      watches.current = [];
+      abortController.abort();
+      watches.forEach((w) => w());
     };
   }, []);
 
@@ -98,7 +93,6 @@ export const KubeBlocksOverviewPage = observer(() => {
 
   return (
     <>
-      <style>{stylesInline}</style>
       <TabLayout>
         <div className={styles.content}>
           <header>
@@ -109,7 +103,7 @@ export const KubeBlocksOverviewPage = observer(() => {
           {clusters.length > 0 && (
             <div className={styles.overviewStatuses}>
               <div className={styles.statuses}>
-                <div className={cssNames(styles.chartColumn, "column")}>
+                <div className={styles.chartColumn}>
                   <ClusterPhasePieChart title="Cluster Status" objects={clusters} />
                 </div>
               </div>
@@ -122,7 +116,9 @@ export const KubeBlocksOverviewPage = observer(() => {
               <div className={styles.table}>
                 {activeOps.map((op) => (
                   <div key={op.getId()} className={styles.tableRow}>
-                    <span><WithTooltip>{op.getName()}</WithTooltip></span>
+                    <span>
+                      <WithTooltip>{op.getName()}</WithTooltip>
+                    </span>
                     <span>{OpsRequest.getClusterName(op)}</span>
                     <span>{OpsRequest.getType(op)}</span>
                     <Badge label={OpsRequest.getPhase(op)} className="warning" />
@@ -139,19 +135,29 @@ export const KubeBlocksOverviewPage = observer(() => {
               <div className={styles.table}>
                 {recentBackups.map((bp) => (
                   <div key={bp.getId()} className={styles.tableRow}>
-                    <span><WithTooltip>{bp.getName()}</WithTooltip></span>
+                    <span>
+                      <WithTooltip>{bp.getName()}</WithTooltip>
+                    </span>
                     <span>Backup</span>
                     <span>{Backup.getClusterName(bp)}</span>
-                    <Badge label={Backup.getPhase(bp)} className={Backup.getPhase(bp) === "Completed" ? "success" : ""} />
+                    <Badge
+                      label={Backup.getPhase(bp)}
+                      className={Backup.getPhase(bp) === "Completed" ? "success" : ""}
+                    />
                     <KubeObjectAge object={bp} />
                   </div>
                 ))}
                 {recentRestores.map((rt) => (
                   <div key={rt.getId()} className={styles.tableRow}>
-                    <span><WithTooltip>{rt.getName()}</WithTooltip></span>
+                    <span>
+                      <WithTooltip>{rt.getName()}</WithTooltip>
+                    </span>
                     <span>Restore</span>
                     <span>{Restore.getTargetCluster(rt)}</span>
-                    <Badge label={Restore.getPhase(rt)} className={Restore.getPhase(rt) === "Completed" ? "success" : ""} />
+                    <Badge
+                      label={Restore.getPhase(rt)}
+                      className={Restore.getPhase(rt) === "Completed" ? "success" : ""}
+                    />
                     <KubeObjectAge object={rt} />
                   </div>
                 ))}

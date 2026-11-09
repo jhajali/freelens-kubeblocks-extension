@@ -6,7 +6,6 @@ import { defaultYamlDumpOptions, getHeight } from "../../utils";
 import { DurationAbsoluteTimestamp } from "../duration-absolute";
 import { getPhaseClass, getPhaseText } from "../status-conditions";
 import styles from "./backup-details.module.scss";
-import stylesInline from "./backup-details.module.scss?inline";
 
 const {
   Component: { Badge, DrawerItem, DrawerTitle, MonacoEditor },
@@ -18,15 +17,18 @@ export const BackupDetails: React.FC<Renderer.Component.KubeObjectDetailsProps<B
 
   return (
     <>
-      <style>{stylesInline}</style>
       <div className={styles.details}>
         <DrawerItem name="Cluster">{Backup.getClusterName(object)}</DrawerItem>
         <DrawerItem name="Method">{Backup.getMethod(object)}</DrawerItem>
         <DrawerItem name="Status">
           <Badge label={getPhaseText(Backup.getPhase(object))} className={getPhaseClass(Backup.getPhase(object))} />
         </DrawerItem>
-        <DrawerItem name="Size" hidden={!Backup.getSize(object)}>{Backup.getSize(object)}</DrawerItem>
-        <DrawerItem name="Duration" hidden={!Backup.getDuration(object)}>{Backup.getDuration(object)}</DrawerItem>
+        <DrawerItem name="Size" hidden={!Backup.getSize(object)}>
+          {Backup.getSize(object)}
+        </DrawerItem>
+        <DrawerItem name="Duration" hidden={!Backup.getDuration(object)}>
+          {Backup.getDuration(object)}
+        </DrawerItem>
 
         <DrawerItem name="Started" hidden={!Backup.getStartTimestamp(object)}>
           <DurationAbsoluteTimestamp timestamp={Backup.getStartTimestamp(object)} />

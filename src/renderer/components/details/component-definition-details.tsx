@@ -4,20 +4,18 @@ import { observer } from "mobx-react";
 import { ComponentDefinition } from "../../k8s/kubeblocks/component-definition-v1";
 import { defaultYamlDumpOptions, getHeight } from "../../utils";
 import styles from "./component-definition-details.module.scss";
-import stylesInline from "./component-definition-details.module.scss?inline";
 
 const {
   Component: { DrawerItem, DrawerTitle, MonacoEditor },
 } = Renderer;
 
-export const ComponentDefinitionDetails: React.FC<Renderer.Component.KubeObjectDetailsProps<ComponentDefinition>> = observer(
-  (props) => {
+export const ComponentDefinitionDetails: React.FC<Renderer.Component.KubeObjectDetailsProps<ComponentDefinition>> =
+  observer((props) => {
     const { object } = props;
     const specYaml = yaml.dump(object.spec ?? {}, defaultYamlDumpOptions);
 
     return (
       <>
-        <style>{stylesInline}</style>
         <div className={styles.details}>
           <DrawerItem name="Provider">{ComponentDefinition.getProvider(object)}</DrawerItem>
           <DrawerItem name="Service Kind" hidden={!ComponentDefinition.getServiceKind(object)}>
@@ -53,5 +51,4 @@ export const ComponentDefinitionDetails: React.FC<Renderer.Component.KubeObjectD
         </div>
       </>
     );
-  },
-);
+  });

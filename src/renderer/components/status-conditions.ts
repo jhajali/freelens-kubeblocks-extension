@@ -1,4 +1,6 @@
-import type { Condition } from "@freelensapp/kube-object";
+import type { Renderer } from "@freelensapp/extensions";
+
+type Condition = Renderer.K8sApi.Condition;
 
 export function getPhaseText(phase?: string): string {
   return phase || "Unknown";

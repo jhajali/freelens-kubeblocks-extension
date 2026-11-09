@@ -1,9 +1,8 @@
 import { Renderer } from "@freelensapp/extensions";
 import { observer } from "mobx-react";
-import { withErrorPage } from "../components/error-page";
+import { whenStoreAvailable } from "../components/store-available";
 import { BackupPolicy, type BackupPolicyApi } from "../k8s/kubeblocks/backup-policy-v1alpha1";
 import styles from "./backup-policies.module.scss";
-import stylesInline from "./backup-policies.module.scss?inline";
 
 const {
   Component: { KubeObjectListLayout, KubeObjectAge, NamespaceSelectBadge, WithTooltip },
@@ -26,12 +25,11 @@ const renderTableHeader = [
 ];
 
 export const BackupPoliciesPage = observer(() =>
-  withErrorPage(() => {
+  whenStoreAvailable(() => {
     const store = BackupPolicy.getStore<BackupPolicy>();
 
     return (
       <>
-        <style>{stylesInline}</style>
         <KubeObjectListLayout<BackupPolicy, BackupPolicyApi>
           tableId="backuppoliciesTable"
           className={styles.page}

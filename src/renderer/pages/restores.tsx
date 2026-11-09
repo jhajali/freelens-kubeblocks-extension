@@ -1,10 +1,9 @@
 import { Renderer } from "@freelensapp/extensions";
 import { observer } from "mobx-react";
-import { withErrorPage } from "../components/error-page";
 import { getPhaseClass, getPhaseText } from "../components/status-conditions";
+import { whenStoreAvailable } from "../components/store-available";
 import { Restore, type RestoreApi } from "../k8s/kubeblocks/restore-v1alpha1";
 import styles from "./restores.module.scss";
-import stylesInline from "./restores.module.scss?inline";
 
 const {
   Component: { Badge, KubeObjectListLayout, KubeObjectAge, NamespaceSelectBadge, WithTooltip },
@@ -29,12 +28,11 @@ const renderTableHeader = [
 ];
 
 export const RestoresPage = observer(() =>
-  withErrorPage(() => {
+  whenStoreAvailable(() => {
     const store = Restore.getStore<Restore>();
 
     return (
       <>
-        <style>{stylesInline}</style>
         <KubeObjectListLayout<Restore, RestoreApi>
           tableId={`${Restore.crd.plural}Table`}
           className={styles.page}
@@ -48,7 +46,10 @@ export const RestoresPage = observer(() =>
             <NamespaceSelectBadge key="namespace" namespace={object.getNs() ?? ""} />,
             <WithTooltip>{Restore.getBackupName(object)}</WithTooltip>,
             <WithTooltip>{Restore.getTargetCluster(object)}</WithTooltip>,
-            <Badge label={getPhaseText(Restore.getPhase(object))} className={getPhaseClass(Restore.getPhase(object))} />,
+            <Badge
+              label={getPhaseText(Restore.getPhase(object))}
+              className={getPhaseClass(Restore.getPhase(object))}
+            />,
             <KubeObjectAge object={object} key="age" />,
           ]}
         />
